@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import json
 import pathlib
-from typing import Dict, Generator
+from typing import Dict, Generator, List, Any
 
 
 class FileAccessor:
@@ -23,7 +23,15 @@ class JsonSchema:
         self.js = js
         self.js_type = self.js.get('type', 'object')
         self.title = self.js.get('title', '').replace(' ', '')
-        self.properties: Dict[str, JsonSchema]  = {}
+        # object
+        self.properties: Dict[str, JsonSchema] = {}
+        # int
+        self.default = self.js.get('default', None)
+        self.minimum = None
+        # enum
+        self.enum_labels: List[str] = []
+        self.enum_values: List[Any] = []
+        self.enum_type = None
 
         if '$ref' in self.js:
             ref_schema = JsonSchema.parse(accessor, self.js['$ref'])
@@ -51,16 +59,37 @@ class JsonSchema:
             if 'items' in self.js:
                 self.items = JsonSchema(self.js['items'], accessor)
                 pass
+        elif self.js_type == 'integer':
+            if 'minimum' in self.js:
+                self.minimum = self.js['minimum']
+            pass
         else:
             pass
+
+        if 'anyOf' in self.js:
+            for x in self.js['anyOf']:
+                if 'type' in x:
+                    self.enum_type = x['type']
+
+            values: List[Any] = []
+            labels: List[str] = []
+            for x in self.js['anyOf']:
+                if 'enum' in x:
+                    values = values + x['enum']
+                    if self.enum_type == 'string':
+                        labels.append(x['enum'][0].replace('/', '_'))
+                    else:
+                        labels.append(x['description'])
+            self.enum_values = values
+            self.enum_labels = labels
 
     def dump(self, key: str, indent: int)->str:
         indent_space = "  " * indent
         if self.js_type == 'object':
             if key:
-                return indent_space + key + ': ' + self.title + '{' +  '\n' + ''.join(v.dump(k, indent + 1) for k, v in self.properties.items()) + indent_space + '}\n'
+                return indent_space + key + ': ' + self.title + '{' + '\n' + ''.join(v.dump(k, indent + 1) for k, v in self.properties.items()) + indent_space + '}\n'
             else:
-                return indent_space + self.title + '{' +  '\n' + ''.join(v.dump(k, indent + 1) for k, v in self.properties.items()) + indent_space + '}\n'
+                return indent_space + self.title + '{' + '\n' + ''.join(v.dump(k, indent + 1) for k, v in self.properties.items()) + indent_space + '}\n'
         elif self.js_type == 'array':
             if self.items.js_type == 'object':
                 return indent_space + key + '[\n' + self.items.dump('', indent + 1) + indent_space + ']\n'
@@ -85,32 +114,111 @@ class JsonSchema:
         for k, v in schema.properties.items():
             self.properties[k] = v
 
-    def generate(self, used=set())->Generator[str, None, None]:
+    def generate(self, key: str = None, used=set())->Generator[str, None, None]:
         if self.js_type == 'object':
-            for _, v in self.properties.items():
-                yield from v.generate(used)
+            for k, v in self.properties.items():
+                yield from v.generate(k, used)
 
         elif self.js_type == 'array':
-            yield from self.items.generate(used)
+            yield from self.items.generate(None, used)
 
         else:
             pass
-            #yield self.js_type
+            # yield self.js_type
 
         if self.title in used:
             pass
-        elif self.js_type == 'object' and self.properties:
-            used.add(self.title)
-            yield f'class {self.title}:'
-            yield '    def __init__(self)->None:'
-            for k, v in self.properties.items():
-                yield f'        self.{k} = None' 
-            yield ''
+        else:
+            if self.enum_type:
+                enum_name = f'E_{key}'
+                if enum_name not in used:
+                    used.add(enum_name)
+                    yield f'class {enum_name}(Enum):'
+                    if self.enum_type == 'integer':
+                        for x, y in zip(self.enum_labels, self.enum_values):
+                            yield f'    {x} = {y}'
+                    elif self.enum_type == 'string':
+                        for x, y in zip(self.enum_labels, self.enum_values):
+                            yield f'    {x} = "{y}"'
+                    else:
+                        raise Exception('unknown enum type')
+                    yield ''
+
+            elif self.js_type == 'object' and self.properties:
+                used.add(self.title)
+                yield f'class {self.title}:'
+                yield '    def __init__(self)->None:'
+                for k, v in self.properties.items():
+                    yield f'        self.{k}: {v.to_annotation(k)}'
+                yield ''
+
+    def to_annotation(self, key: str)->str:
+        if self.js_type == 'integer':
+            if self.default != None:
+                return f'int = {self.default}'
+            else:
+                return 'int = -1'
+
+        elif self.js_type == 'number':
+            if self.default != None:
+                return f'float = {self.default}'
+            else:
+                return 'float = float("nan")'
+
+        elif self.js_type == 'string':
+            if self.default != None:
+                return f'str = {self.default}'
+            else:
+                return 'str = ""'
+
+        elif self.js_type == 'boolean':
+            if self.default != None:
+                return f'bool = {self.default}'
+            else:
+                return 'bool = False'
+
+        elif self.js_type == 'object':
+            if self.title == 'Extension' or self.title == 'Extras':
+                return 'Dict[str, Any] = {}'
+            elif self.title:
+                return f'{self.title} = {self.title}()'
+            elif 'additionalProperties' in self.js:
+                return 'Dict[str, int] = {}'
+
+        elif self.js_type == 'array':
+            if self.items.js_type == 'number':
+                return f'List[float] = []'
+            elif self.items.js_type == 'integer':
+                return f'List[int] = []'
+            elif self.items.js_type == 'string':
+                return f'List[str] = []'
+            elif self.items.js_type == 'object':
+                if self.items.title:
+                    return f'List[{self.items.title}] = []'
+                elif 'additionalProperties' in self.items.js:
+                    return f'List[Dict[str, int]] = []'
+                else:
+                    return ''
+                
+            else:
+                raise Exception('unknown type: ' + self.items.js_type)
+
+        if self.enum_type:
+            enum_name = f'E_{key}'
+            if self.default:
+                if self.enum_type == 'string':
+                    return f'{enum_name} = {enum_name}("{self.default}")'
+                else:
+                    return f'{enum_name} = {enum_name}({self.default})'
+            else:
+                return f'Optional[{enum_name}] = None'
+
+        return ''
 
 
 def parse_schema(path: pathlib.Path)->JsonSchema:
     accessor = FileAccessor(path.parent)
-    schema =  JsonSchema.parse(accessor, path.name)
+    schema = JsonSchema.parse(accessor, path.name)
     return schema
 
 
@@ -118,8 +226,8 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("schema_json")
-    parser.add_argument("-o","--out",
-                        action = "store"
+    parser.add_argument("-o", "--out",
+                        action="store"
                         )
     args = parser.parse_args()
 
@@ -128,6 +236,11 @@ if __name__ == '__main__':
 
     if args.out:
         with pathlib.Path(args.out).open('w', encoding='utf-8') as f:
+            f.write('''
+from typing import Dict, Any, List, Optional
+from enum import Enum
+
+''')
             f.writelines('\n'.join(schema.generate()))
     else:
         print(schema)
