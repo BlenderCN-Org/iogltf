@@ -6,4 +6,7 @@ path = pathlib.Path('gltf/specification/2.0/schema/glTF.schema.json')
 
 schema = moldjson.parse_schema(path)
 
-print(schema)
+#print(schema)
+for x in schema.generate():
+    print(x)
+
