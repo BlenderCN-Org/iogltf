@@ -23,3 +23,8 @@ json_dict = get_json_dict()
 root = definitions.from_json(json_dict)
 ```
 
+## sample
+
+```
+$ git clone https://github.com/KhronosGroup/glTF.git
+```
