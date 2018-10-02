@@ -30,16 +30,30 @@ class JsonSchema:
                     sub_schema = JsonSchema.parse(accessor, x['$ref'])
                     self.merge(sub_schema)
 
-        if 'properties' in self.js:
-            for k, v in self.js['properties'].items():
-                self.properties[k] = JsonSchema(v, accessor)
+        if self.js_type == 'object':
+            if 'properties' in self.js:
+                for k, v in self.js['properties'].items():
+                    self.properties[k] = JsonSchema(v, accessor)
+        elif self.js_type == 'array':
+            if 'items' in self.js:
+                self.items = JsonSchema(self.js['items'], accessor)
+        else:
+            pass
 
     def dump(self, key: str, indent: int)->str:
         indent_space = "  " * indent
         if self.js_type == 'object':
-            return f'{indent_space}{key} ' + '{\n' + ''.join(v.dump(k, indent + 1) for k, v in self.properties.items()) + indent_space + '}\n'
+            return indent_space + key + '{\n' + ''.join(v.dump(k, indent + 1) for k, v in self.properties.items()) + indent_space + '}\n'
+        elif self.js_type == 'array':
+            if self.items.js_type == 'object':
+                return indent_space + key + '[\n' + self.items.dump('', indent + 1) + indent_space + ']\n'
+            else:
+                return indent_space + key + '[' + self.items.js_type + ']\n'
         else:
-            return f'{indent_space}{key}: {self.js_type}\n'
+            if key:
+                return indent_space + key + ': ' + self.js_type + '\n'
+            else:
+                return indent_space + self.js_type + '\n'
 
     def __str__(self)->str:
         return self.dump(self.title, 0)
