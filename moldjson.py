@@ -23,6 +23,11 @@ class JsonSchema:
         self.js_type = self.js.get('type', 'object')
         self.title = self.js.get('title', '')
         self.properties: Dict[str, JsonSchema]  = {}
+
+        if '$ref' in self.js:
+            ref_schema = JsonSchema.parse(accessor, self.js['$ref'])
+            self.merge(ref_schema)
+
         if 'allOf' in self.js:
             # "allOf": [ { "$ref": "glTFProperty.schema.json" } ],
             for x in self.js['allOf']:
@@ -33,10 +38,18 @@ class JsonSchema:
         if self.js_type == 'object':
             if 'properties' in self.js:
                 for k, v in self.js['properties'].items():
-                    self.properties[k] = JsonSchema(v, accessor)
+                    if k in self.properties:
+                        if v:
+                            self.properties[k] = JsonSchema(v, accessor)
+                        else:
+                            # empty
+                            pass
+                    else:
+                        self.properties[k] = JsonSchema(v, accessor)
         elif self.js_type == 'array':
             if 'items' in self.js:
                 self.items = JsonSchema(self.js['items'], accessor)
+                pass
         else:
             pass
 
