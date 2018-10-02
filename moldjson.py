@@ -20,6 +20,7 @@ class JsonSchema:
 
     def __init__(self, js: dict, accessor: FileAccessor)->None:
         self.js = js
+        self.js_type = self.js.get('type', 'object')
         self.title = self.js.get('title', '')
         self.properties: Dict[str, JsonSchema]  = {}
         if 'allOf' in self.js:
@@ -33,10 +34,20 @@ class JsonSchema:
             for k, v in self.js['properties'].items():
                 self.properties[k] = JsonSchema(v, accessor)
 
+    def dump(self, key: str, indent: int)->str:
+        indent_space = "  " * indent
+        if self.js_type == 'object':
+            return f'{indent_space}{key} ' + '{\n' + ''.join(v.dump(k, indent + 1) for k, v in self.properties.items()) + indent_space + '}\n'
+        else:
+            return f'{indent_space}{key}: {self.js_type}\n'
+
     def __str__(self)->str:
-        return f'<{self.title}>'
+        return self.dump(self.title, 0)
 
     def merge(self, schema: 'JsonSchema')->None:
+        if schema.js_type:
+            self.js_type = schema.js_type
+
         for k, v in schema.properties.items():
             self.properties[k] = v
 
