@@ -140,10 +140,13 @@ class JsonSchema:
             pass
         else:
             if self.enum_type:
-                enum_name = f'E_{title}_{key}'
+                enum_name = f'{title}_{key}'
                 if enum_name not in used:
                     used.add(enum_name)
                     yield f'class {enum_name}(Enum):'
+                    comment = self.get_comment()
+                    if comment:
+                        yield f'    """{comment}"""'
                     if self.enum_type == 'integer':
                         for x, y in zip(self.enum_labels, self.enum_values):
                             yield f'    {x} = {y}'
@@ -212,7 +215,7 @@ class JsonSchema:
                 raise Exception('unknown type: ' + self.items.title)
 
         if self.enum_type:
-            enum_name = f'E_{title}_{key}'
+            enum_name = f'{title}_{key}'
             if self.default:
                 if self.enum_type == 'string':
                     return f'{enum_name}', f'{enum_name}("{self.default}")', f'{enum_name}(%s)'

@@ -2,7 +2,8 @@
 from typing import Dict, Any, List, Optional
 from enum import Enum
 
-class E_Accessor_componentType(Enum):
+class Accessor_componentType(Enum):
+    """The datatype of components in the attribute."""
     BYTE = 5120
     UNSIGNED_BYTE = 5121
     SHORT = 5122
@@ -10,7 +11,8 @@ class E_Accessor_componentType(Enum):
     UNSIGNED_INT = 5125
     FLOAT = 5126
 
-class E_Accessor_type(Enum):
+class Accessor_type(Enum):
+    """Specifies if the attribute is a scalar, vector, or matrix."""
     SCALAR = "SCALAR"
     VEC2 = "VEC2"
     VEC3 = "VEC3"
@@ -19,7 +21,8 @@ class E_Accessor_type(Enum):
     MAT3 = "MAT3"
     MAT4 = "MAT4"
 
-class E_AccessorSparseIndices_componentType(Enum):
+class AccessorSparseIndices_componentType(Enum):
+    """The indices data type."""
     UNSIGNED_BYTE = 5121
     UNSIGNED_SHORT = 5123
     UNSIGNED_INT = 5125
@@ -47,10 +50,10 @@ class AccessorSparseIndices:
         if (js and "byteOffset" in js):
             self.byteOffset: int = js["byteOffset"]
 
-        self.componentType: Optional[E_AccessorSparseIndices_componentType] = None
+        self.componentType: Optional[AccessorSparseIndices_componentType] = None
         """The indices data type."""
         if (js and "componentType" in js):
-            self.componentType: Optional[E_AccessorSparseIndices_componentType] = E_AccessorSparseIndices_componentType(js["componentType"])
+            self.componentType: Optional[AccessorSparseIndices_componentType] = AccessorSparseIndices_componentType(js["componentType"])
 
 class AccessorSparseValues:
     """Array of size `count` times number of components, storing the displaced accessor attributes pointed by `indices`. Substituted values must have the same `componentType` and number of components as the base accessor."""
@@ -131,10 +134,10 @@ class Accessor:
         if (js and "byteOffset" in js):
             self.byteOffset: int = js["byteOffset"]
 
-        self.componentType: Optional[E_Accessor_componentType] = None
+        self.componentType: Optional[Accessor_componentType] = None
         """The datatype of components in the attribute."""
         if (js and "componentType" in js):
-            self.componentType: Optional[E_Accessor_componentType] = E_Accessor_componentType(js["componentType"])
+            self.componentType: Optional[Accessor_componentType] = Accessor_componentType(js["componentType"])
 
         self.normalized: bool = False
         """Specifies whether integer data values should be normalized."""
@@ -146,10 +149,10 @@ class Accessor:
         if (js and "count" in js):
             self.count: int = js["count"]
 
-        self.type: Optional[E_Accessor_type] = None
+        self.type: Optional[Accessor_type] = None
         """Specifies if the attribute is a scalar, vector, or matrix."""
         if (js and "type" in js):
-            self.type: Optional[E_Accessor_type] = E_Accessor_type(js["type"])
+            self.type: Optional[Accessor_type] = Accessor_type(js["type"])
 
         self.max: List[float] = []
         if (js and "max" in js):
@@ -164,7 +167,8 @@ class Accessor:
         if (js and "sparse" in js):
             self.sparse: AccessorSparse = AccessorSparse(js["sparse"])
 
-class E_AnimationChannelTarget_path(Enum):
+class AnimationChannelTarget_path(Enum):
+    """The name of the node's TRS property to modify, or the "weights" of the Morph Targets it instantiates. For the "translation" property, the values that are provided by the sampler are the translation along the x, y, and z axes. For the "rotation" property, the values are a quaternion in the order (x, y, z, w), where w is the scalar. For the "scale" property, the values are the scaling factors along the x, y, and z axes."""
     translation = "translation"
     rotation = "rotation"
     scale = "scale"
@@ -188,10 +192,10 @@ class AnimationChannelTarget:
         if (js and "node" in js):
             self.node: int = js["node"]
 
-        self.path: Optional[E_AnimationChannelTarget_path] = None
+        self.path: Optional[AnimationChannelTarget_path] = None
         """The name of the node's TRS property to modify, or the "weights" of the Morph Targets it instantiates. For the "translation" property, the values that are provided by the sampler are the translation along the x, y, and z axes. For the "rotation" property, the values are a quaternion in the order (x, y, z, w), where w is the scalar. For the "scale" property, the values are the scaling factors along the x, y, and z axes."""
         if (js and "path" in js):
-            self.path: Optional[E_AnimationChannelTarget_path] = E_AnimationChannelTarget_path(js["path"])
+            self.path: Optional[AnimationChannelTarget_path] = AnimationChannelTarget_path(js["path"])
 
 class AnimationChannel:
     """Targets an animation's sampler at a node's property."""
@@ -216,7 +220,8 @@ class AnimationChannel:
         if (js and "target" in js):
             self.target: AnimationChannelTarget = AnimationChannelTarget(js["target"])
 
-class E_AnimationSampler_interpolation(Enum):
+class AnimationSampler_interpolation(Enum):
+    """Interpolation algorithm."""
     LINEAR = "LINEAR"
     STEP = "STEP"
     CUBICSPLINE = "CUBICSPLINE"
@@ -239,10 +244,10 @@ class AnimationSampler:
         if (js and "input" in js):
             self.input: int = js["input"]
 
-        self.interpolation: E_AnimationSampler_interpolation = E_AnimationSampler_interpolation("LINEAR")
+        self.interpolation: AnimationSampler_interpolation = AnimationSampler_interpolation("LINEAR")
         """Interpolation algorithm."""
         if (js and "interpolation" in js):
-            self.interpolation: E_AnimationSampler_interpolation = E_AnimationSampler_interpolation(js["interpolation"])
+            self.interpolation: AnimationSampler_interpolation = AnimationSampler_interpolation(js["interpolation"])
 
         self.output: int = -1
         """The index of an accessor, containing keyframe output values."""
@@ -338,7 +343,8 @@ class Buffer:
         if (js and "byteLength" in js):
             self.byteLength: int = js["byteLength"]
 
-class E_BufferView_target(Enum):
+class BufferView_target(Enum):
+    """The target that the GPU buffer should be bound to."""
     ARRAY_BUFFER = 34962
     ELEMENT_ARRAY_BUFFER = 34963
 
@@ -380,10 +386,10 @@ class BufferView:
         if (js and "byteStride" in js):
             self.byteStride: int = js["byteStride"]
 
-        self.target: Optional[E_BufferView_target] = None
+        self.target: Optional[BufferView_target] = None
         """The target that the GPU buffer should be bound to."""
         if (js and "target" in js):
-            self.target: Optional[E_BufferView_target] = E_BufferView_target(js["target"])
+            self.target: Optional[BufferView_target] = BufferView_target(js["target"])
 
 class CameraOrthographic:
     """An orthographic camera containing properties to create an orthographic projection matrix."""
@@ -451,7 +457,8 @@ class CameraPerspective:
         if (js and "znear" in js):
             self.znear: float = js["znear"]
 
-class E_Camera_type(Enum):
+class Camera_type(Enum):
+    """Specifies if the camera uses a perspective or orthographic projection."""
     perspective = "perspective"
     orthographic = "orthographic"
 
@@ -483,12 +490,13 @@ class Camera:
         if (js and "perspective" in js):
             self.perspective: CameraPerspective = CameraPerspective(js["perspective"])
 
-        self.type: Optional[E_Camera_type] = None
+        self.type: Optional[Camera_type] = None
         """Specifies if the camera uses a perspective or orthographic projection."""
         if (js and "type" in js):
-            self.type: Optional[E_Camera_type] = E_Camera_type(js["type"])
+            self.type: Optional[Camera_type] = Camera_type(js["type"])
 
-class E_Image_mimeType(Enum):
+class Image_mimeType(Enum):
+    """The image's MIME type. Required if `bufferView` is defined."""
     image_jpeg = "image/jpeg"
     image_png = "image/png"
 
@@ -515,10 +523,10 @@ class Image:
         if (js and "uri" in js):
             self.uri: str = js["uri"]
 
-        self.mimeType: Optional[E_Image_mimeType] = None
+        self.mimeType: Optional[Image_mimeType] = None
         """The image's MIME type. Required if `bufferView` is defined."""
         if (js and "mimeType" in js):
-            self.mimeType: Optional[E_Image_mimeType] = E_Image_mimeType(js["mimeType"])
+            self.mimeType: Optional[Image_mimeType] = Image_mimeType(js["mimeType"])
 
         self.bufferView: int = -1
         """The index of the bufferView that contains the image. Use this instead of the image's uri property."""
@@ -641,7 +649,8 @@ class MaterialOcclusionTextureInfo:
         if (js and "strength" in js):
             self.strength: float = js["strength"]
 
-class E_Material_alphaMode(Enum):
+class Material_alphaMode(Enum):
+    """The alpha rendering mode of the material."""
     OPAQUE = "OPAQUE"
     MASK = "MASK"
     BLEND = "BLEND"
@@ -688,10 +697,10 @@ class Material:
         if (js and "emissiveFactor" in js):
             self.emissiveFactor: List[float] = js["emissiveFactor"]
 
-        self.alphaMode: E_Material_alphaMode = E_Material_alphaMode("OPAQUE")
+        self.alphaMode: Material_alphaMode = Material_alphaMode("OPAQUE")
         """The alpha rendering mode of the material."""
         if (js and "alphaMode" in js):
-            self.alphaMode: E_Material_alphaMode = E_Material_alphaMode(js["alphaMode"])
+            self.alphaMode: Material_alphaMode = Material_alphaMode(js["alphaMode"])
 
         self.alphaCutoff: float = 0.5
         """The alpha cutoff value of the material."""
@@ -703,7 +712,8 @@ class Material:
         if (js and "doubleSided" in js):
             self.doubleSided: bool = js["doubleSided"]
 
-class E_MeshPrimitive_mode(Enum):
+class MeshPrimitive_mode(Enum):
+    """The type of primitives to render."""
     POINTS = 0
     LINES = 1
     LINE_LOOP = 2
@@ -740,10 +750,10 @@ class MeshPrimitive:
         if (js and "material" in js):
             self.material: int = js["material"]
 
-        self.mode: E_MeshPrimitive_mode = E_MeshPrimitive_mode(4)
+        self.mode: MeshPrimitive_mode = MeshPrimitive_mode(4)
         """The type of primitives to render."""
         if (js and "mode" in js):
-            self.mode: E_MeshPrimitive_mode = E_MeshPrimitive_mode(js["mode"])
+            self.mode: MeshPrimitive_mode = MeshPrimitive_mode(js["mode"])
 
         self.targets: List[Dict[str, int]] = []
         """A dictionary object specifying attributes displacements in a Morph Target, where each key corresponds to one of the three supported attribute semantic (`POSITION`, `NORMAL`, or `TANGENT`) and each value is the index of the accessor containing the attribute displacements' data."""
@@ -834,11 +844,13 @@ class Node:
         if (js and "weights" in js):
             self.weights: List[float] = js["weights"]
 
-class E_Sampler_magFilter(Enum):
+class Sampler_magFilter(Enum):
+    """Magnification filter."""
     NEAREST = 9728
     LINEAR = 9729
 
-class E_Sampler_minFilter(Enum):
+class Sampler_minFilter(Enum):
+    """Minification filter."""
     NEAREST = 9728
     LINEAR = 9729
     NEAREST_MIPMAP_NEAREST = 9984
@@ -846,12 +858,14 @@ class E_Sampler_minFilter(Enum):
     NEAREST_MIPMAP_LINEAR = 9986
     LINEAR_MIPMAP_LINEAR = 9987
 
-class E_Sampler_wrapS(Enum):
+class Sampler_wrapS(Enum):
+    """s wrapping mode."""
     CLAMP_TO_EDGE = 33071
     MIRRORED_REPEAT = 33648
     REPEAT = 10497
 
-class E_Sampler_wrapT(Enum):
+class Sampler_wrapT(Enum):
+    """t wrapping mode."""
     CLAMP_TO_EDGE = 33071
     MIRRORED_REPEAT = 33648
     REPEAT = 10497
@@ -874,25 +888,25 @@ class Sampler:
         if (js and "name" in js):
             self.name: str = js["name"]
 
-        self.magFilter: Optional[E_Sampler_magFilter] = None
+        self.magFilter: Optional[Sampler_magFilter] = None
         """Magnification filter."""
         if (js and "magFilter" in js):
-            self.magFilter: Optional[E_Sampler_magFilter] = E_Sampler_magFilter(js["magFilter"])
+            self.magFilter: Optional[Sampler_magFilter] = Sampler_magFilter(js["magFilter"])
 
-        self.minFilter: Optional[E_Sampler_minFilter] = None
+        self.minFilter: Optional[Sampler_minFilter] = None
         """Minification filter."""
         if (js and "minFilter" in js):
-            self.minFilter: Optional[E_Sampler_minFilter] = E_Sampler_minFilter(js["minFilter"])
+            self.minFilter: Optional[Sampler_minFilter] = Sampler_minFilter(js["minFilter"])
 
-        self.wrapS: E_Sampler_wrapS = E_Sampler_wrapS(10497)
+        self.wrapS: Sampler_wrapS = Sampler_wrapS(10497)
         """s wrapping mode."""
         if (js and "wrapS" in js):
-            self.wrapS: E_Sampler_wrapS = E_Sampler_wrapS(js["wrapS"])
+            self.wrapS: Sampler_wrapS = Sampler_wrapS(js["wrapS"])
 
-        self.wrapT: E_Sampler_wrapT = E_Sampler_wrapT(10497)
+        self.wrapT: Sampler_wrapT = Sampler_wrapT(10497)
         """t wrapping mode."""
         if (js and "wrapT" in js):
-            self.wrapT: E_Sampler_wrapT = E_Sampler_wrapT(js["wrapT"])
+            self.wrapT: Sampler_wrapT = Sampler_wrapT(js["wrapT"])
 
 class Scene:
     """The root nodes of a scene."""
