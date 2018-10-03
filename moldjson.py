@@ -124,13 +124,13 @@ class JsonSchema:
         for k, v in schema.properties.items():
             self.properties[k] = v
 
-    def generate(self, key: str = None, used=set())->Generator[str, None, None]:
+    def generate(self, title: str = None, key: str = None, used=set())->Generator[str, None, None]:
         if self.js_type == 'object':
             for k, v in self.properties.items():
-                yield from v.generate(k, used)
+                yield from v.generate(self.title, k, used)
 
         elif self.js_type == 'array':
-            yield from self.items.generate(None, used)
+            yield from self.items.generate(self.title, None, used)
 
         else:
             pass
@@ -140,7 +140,7 @@ class JsonSchema:
             pass
         else:
             if self.enum_type:
-                enum_name = f'E_{key}'
+                enum_name = f'E_{title}_{key}'
                 if enum_name not in used:
                     used.add(enum_name)
                     yield f'class {enum_name}(Enum):'
@@ -160,7 +160,7 @@ class JsonSchema:
                 yield f'    """{self.description}"""'
                 yield '    def __init__(self, js: dict = None)->None:'
                 for k, v in self.properties.items():
-                    type_str, default_str, constructor = v.to_annotation(k)
+                    type_str, default_str, constructor = v.to_annotation(self.title, k)
                     yield f'        self.{k}: {type_str} = {default_str}'
                     comment = v.get_comment()
                     if comment:
@@ -173,7 +173,7 @@ class JsonSchema:
                         yield f'            self.{k}: {type_str} = js["{k}"]'
                     yield ''
 
-    def to_annotation(self, key: str)->Tuple[str, str, Optional[str]]:
+    def to_annotation(self, title: str, key: str)->Tuple[str, str, Optional[str]]:
         if self.js_type == 'integer':
             return 'int', repr(self.default) if self.default != None else '-1', None
 
@@ -212,7 +212,7 @@ class JsonSchema:
                 raise Exception('unknown type: ' + self.items.title)
 
         if self.enum_type:
-            enum_name = f'E_{key}'
+            enum_name = f'E_{title}_{key}'
             if self.default:
                 if self.enum_type == 'string':
                     return f'{enum_name}', f'{enum_name}("{self.default}")', f'{enum_name}(%s)'
