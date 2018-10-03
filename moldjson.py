@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import json
 import pathlib
-from typing import Dict, Generator, List, Any
+from typing import Dict, Generator, List, Any, Tuple, Optional
 
 
 class FileAccessor:
@@ -23,6 +23,7 @@ class JsonSchema:
         self.js = js
         self.js_type = self.js.get('type', 'object')
         self.title = self.js.get('title', '').replace(' ', '')
+        self.description = self.js.get('description')
         # object
         self.properties: Dict[str, JsonSchema] = {}
         # int
@@ -83,6 +84,12 @@ class JsonSchema:
             self.enum_values = values
             self.enum_labels = labels
 
+    def get_comment(self)->Optional[str]:
+        if self.js_type == 'array':
+            return self.items.description
+        else:
+            return self.description
+
     def dump(self, key: str, indent: int)->str:
         indent_space = "  " * indent
         if self.js_type == 'object':
@@ -110,6 +117,9 @@ class JsonSchema:
 
         if not self.title and schema.title:
             self.title = schema.title
+
+        if not self.description and schema.description:
+            self.description = schema.description
 
         for k, v in schema.properties.items():
             self.properties[k] = v
@@ -147,73 +157,85 @@ class JsonSchema:
             elif self.js_type == 'object' and self.properties:
                 used.add(self.title)
                 yield f'class {self.title}:'
-                yield '    def __init__(self)->None:'
+                yield f'    """{self.description}"""'
+                yield '    def __init__(self, js: dict = None)->None:'
                 for k, v in self.properties.items():
-                    yield f'        self.{k}: {v.to_annotation(k)}'
-                yield ''
+                    type_str, default_str, constructor = v.to_annotation(k)
+                    yield f'        self.{k}: {type_str} = {default_str}'
+                    comment = v.get_comment()
+                    if comment:
+                        yield f'        """{comment}"""'
+                    yield f'        if (js and "{k}" in js):'
+                    if constructor:
+                        constructor = constructor % f'js["{k}"]'
+                        yield f'            self.{k}: {type_str} = {constructor}'
+                    else:
+                        yield f'            self.{k}: {type_str} = js["{k}"]'
+                    yield ''
 
-    def to_annotation(self, key: str)->str:
+    def to_annotation(self, key: str)->Tuple[str, str, Optional[str]]:
         if self.js_type == 'integer':
-            if self.default != None:
-                return f'int = {self.default}'
-            else:
-                return 'int = -1'
+            return 'int', repr(self.default) if self.default != None else '-1', None
 
         elif self.js_type == 'number':
-            if self.default != None:
-                return f'float = {self.default}'
-            else:
-                return 'float = float("nan")'
+            return 'float', repr(self.default) if self.default != None else 'float("nan")', None
 
         elif self.js_type == 'string':
-            if self.default != None:
-                return f'str = {self.default}'
-            else:
-                return 'str = ""'
+            return 'str', repr(self.default) if self.default != None else '""', None
 
         elif self.js_type == 'boolean':
-            if self.default != None:
-                return f'bool = {self.default}'
-            else:
-                return 'bool = False'
+            return 'bool', repr(self.default) if self.default != None else 'False', None
 
         elif self.js_type == 'object':
             if self.title == 'Extension' or self.title == 'Extras':
-                return 'Dict[str, Any] = {}'
+                return 'Dict[str, Any]', '{}', None
             elif self.title:
-                return f'{self.title} = {self.title}()'
+                return f'{self.title}', 'None', f'{self.title}(%s)'
             elif 'additionalProperties' in self.js:
-                return 'Dict[str, int] = {}'
+                return 'Dict[str, int]', '{}', None
 
         elif self.js_type == 'array':
             if self.items.js_type == 'number':
-                return f'List[float] = []'
+                return 'List[float]', '[]', None
             elif self.items.js_type == 'integer':
-                return f'List[int] = []'
+                return 'List[int]', '[]', None
             elif self.items.js_type == 'string':
-                return f'List[str] = []'
+                return 'List[str]', '[]', None
             elif self.items.js_type == 'object':
                 if self.items.title:
-                    return f'List[{self.items.title}] = []'
+                    return f'List[{self.items.title}]', '[]', f'[{self.items.title}(x) for x in %s]'
                 elif 'additionalProperties' in self.items.js:
-                    return f'List[Dict[str, int]] = []'
+                    return f'List[Dict[str, int]]', '[]', None
                 else:
-                    return ''
-                
+                    raise Exception('unknown type: ' + self.items.title)
             else:
-                raise Exception('unknown type: ' + self.items.js_type)
+                raise Exception('unknown type: ' + self.items.title)
 
         if self.enum_type:
             enum_name = f'E_{key}'
             if self.default:
                 if self.enum_type == 'string':
-                    return f'{enum_name} = {enum_name}("{self.default}")'
+                    return f'{enum_name}', f'{enum_name}("{self.default}")', f'{enum_name}(%s)'
                 else:
-                    return f'{enum_name} = {enum_name}({self.default})'
+                    return f'{enum_name}', f'{enum_name}({self.default})', f'{enum_name}(%s)'
             else:
-                return f'Optional[{enum_name}] = None'
+                return f'Optional[{enum_name}]', 'None', f'{enum_name}(%s)'
 
-        return ''
+        raise Exception('unknown type: ' + self.title)
+
+    def to_py(self, path: pathlib.Path)->None:
+        with path.open('w', encoding='utf-8') as f:
+            f.write('''
+from typing import Dict, Any, List, Optional
+from enum import Enum
+
+''')
+            f.writelines('\n'.join(self.generate()))
+
+            f.write(f'''
+def from_json(js: dict)->{self.title}:
+    return {self.title}(js)
+''')
 
 
 def parse_schema(path: pathlib.Path)->JsonSchema:
@@ -235,12 +257,6 @@ if __name__ == '__main__':
     schema = parse_schema(path)
 
     if args.out:
-        with pathlib.Path(args.out).open('w', encoding='utf-8') as f:
-            f.write('''
-from typing import Dict, Any, List, Optional
-from enum import Enum
-
-''')
-            f.writelines('\n'.join(schema.generate()))
+        schema.to_py(pathlib.Path(args.out))
     else:
         print(schema)
