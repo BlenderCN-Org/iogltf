@@ -11,10 +11,10 @@ bl_info = {
     "category": "Import-Export"}
 
 
-if "bpy" in locals():
+if "import_gltf" in locals():
+    print('reload', 'import_gltf')
     import importlib
-    if "gltf" in locals():
-        importlib.reload(locals()["gltf"])
+    importlib.reload(import_gltf)
 
 
 import bpy
@@ -58,21 +58,8 @@ class ImportGLTF(bpy.types.Operator, ImportHelper):
 
         keywords["global_matrix"] = global_matrix
 
-        try:
-            from . import gltftypes
-        except:
-            import gltftypes
-        import json
-        import pathlib
-
-        path = pathlib.Path(keywords['filepath'])
-        with path.open() as f:
-            gltf = gltftypes.from_json(json.load(f))
-            print(gltf)
-
-            # create meshes
-
-        return {'FINISHED'}
+        from . import import_gltf
+        return import_gltf.load(**keywords)
 
 
 def menu_func_import(self, context):

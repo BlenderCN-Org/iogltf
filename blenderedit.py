@@ -1,6 +1,10 @@
 import pathlib
-import iogltf
 import bpy
+
+import iogltf
+print('reload', iogltf)
+import importlib
+importlib.reload(iogltf)
 
 print(f"#### run {__file__} ####")
 
