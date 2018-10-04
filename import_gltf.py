@@ -1,20 +1,22 @@
 import json
 import pathlib
+from typing import Set
 
-from bpy_extras.image_utils import load_image
 from progress_report import ProgressReport, ProgressReportSubstep
+from bpy_extras.image_utils import load_image
 
-from typing import Set 
 from . import gltftypes
 
 
 def load(context, filepath: str, global_matrix)->Set[str]:
+    path = pathlib.Path(filepath)
+    if not path.exists():
+        return {'CANCELLED'}
 
     with ProgressReport(context.window_manager) as progress:
         progress.enter_substeps(1, "Importing GLTF %r..." % filepath)
 
         progress.enter_substeps(3, "Parsing GLTF file...")
-        path = pathlib.Path(filepath)
         with path.open() as f:
             gltf = gltftypes.from_json(json.load(f))
         base_dir = path.parent

@@ -1,22 +1,3 @@
-bl_info = {
-    "name": "IO GL Transmission Format (GLTF)",
-    "author": "ousttrue",
-    "version": (1, 0, 0),
-    "blender": (2, 80, 0),
-    "location": "File > Import-Export",
-    "description": "Import-Export GLTF from objects",
-    "warning": "",
-    "wiki_url": "https://github.com/ousttrue/iogltf",
-    "support": 'COMMUNITY',
-    "category": "Import-Export"}
-
-
-if "import_gltf" in locals():
-    print('reload', 'import_gltf')
-    import importlib
-    importlib.reload(import_gltf)
-
-
 import bpy
 from bpy.props import (
     StringProperty,
@@ -31,6 +12,23 @@ from bpy_extras.io_utils import (
     orientation_helper,
     axis_conversion,
 )
+if "import_gltf" in locals():
+    print('reload', 'import_gltf')
+    import importlib
+    importlib.reload(import_gltf)
+
+
+bl_info = {
+    "name": "IO GL Transmission Format (GLTF)",
+    "author": "ousttrue",
+    "version": (1, 0, 0),
+    "blender": (2, 80, 0),
+    "location": "File > Import-Export",
+    "description": "Import-Export GLTF from objects",
+    "warning": "",
+    "wiki_url": "https://github.com/ousttrue/iogltf",
+    "support": 'COMMUNITY',
+    "category": "Import-Export"}
 
 
 @orientation_helper(axis_forward='-Z', axis_up='Y')
@@ -71,13 +69,13 @@ def menu_func_import(self, context):
 #    self.layout.operator(ExportBVH.bl_idname, text="Motion Capture (.bvh)")
 
 
-classes = (
+CLASSES = (
     ImportGLTF,
 )
 
 
 def register():
-    for cls in classes:
+    for cls in CLASSES:
         bpy.utils.register_class(cls)
 
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
@@ -85,20 +83,23 @@ def register():
 
 
 def unregister():
-    for cls in classes:
+    for cls in CLASSES:
         bpy.utils.unregister_class(cls)
 
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
     # bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
 
 
-if __name__ == "__main__":
+def main():
     import pathlib
     import sys
-    this = pathlib.Path(__file__).absolute()
-    here = this.parent
+    here = pathlib.Path(__file__).absolute().parent
     if here.suffix == '.blend':
         here = here.parent
     if str(here) not in sys.path:
         sys.path.append(str(here))
     register()
+
+
+if __name__ == "__main__":
+    main()
