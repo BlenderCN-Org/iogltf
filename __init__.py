@@ -59,7 +59,7 @@ class ImportGLTF(bpy.types.Operator, ImportHelper):
         keywords["global_matrix"] = global_matrix
 
         from . import import_gltf
-        return import_gltf.load(**keywords)
+        return import_gltf.load(context, **keywords)
 
 
 def menu_func_import(self, context):
