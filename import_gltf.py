@@ -134,11 +134,13 @@ class VertexBuffer:
         # merge submesh
         pos_count = sum((len(x.pos) for x in submeshes), 0)
         self.pos = (ctypes.c_float * (pos_count * 3))()
+        self.uv = (Float2 * (pos_count))()
 
         index_count = sum((len(x.indices) for x in submeshes), 0)
         self.indices = (ctypes.c_int * index_count)()
 
         pos_index = 0
+        uv_index = 0
         i = 0
         for submesh in submeshes:
             for x in submesh.pos:
@@ -148,6 +150,9 @@ class VertexBuffer:
                 pos_index += 1
                 self.pos[pos_index] = x.z
                 pos_index += 1
+            for x in submesh.uv:
+                self.uv[uv_index] = x
+                uv_index += 1
             for x in submesh.indices:
                 self.indices[i] = x
                 i += 1
@@ -202,13 +207,11 @@ def load(context, filepath: str, global_matrix)->Set[str]:
             vertices = VertexBuffer(base_dir, gltf, mesh)
 
             blender_mesh.vertices.add(len(vertices.pos)/3)
-            positions = [x for x in vertices.pos]
             blender_mesh.vertices.foreach_set(
-                "co", positions)
+                "co", vertices.pos)
 
             blender_mesh.loops.add(len(vertices.indices))
-            indices = [x for x in vertices.indices]
-            blender_mesh.loops.foreach_set("vertex_index", indices)
+            blender_mesh.loops.foreach_set("vertex_index", vertices.indices)
 
             triangle_count = int(len(vertices.indices) / 3)
             blender_mesh.polygons.add(triangle_count)
@@ -217,25 +220,17 @@ def load(context, filepath: str, global_matrix)->Set[str]:
             total = [3 for _ in range(triangle_count)]
             blender_mesh.polygons.foreach_set("loop_total", total)
 
-            '''
             blen_uvs = blender_mesh.uv_layers.new()
-            #blen_uvs.data.foreach_set("uv", [x for x in vertices.iter_uv()])
-            for i, uv in enumerate(vertices.iter_uv()):
-                blen_uvs.data[i].uv = uv
+            for blen_poly in blender_mesh.polygons:
+                for lidx in blen_poly.loop_indices:
+                    # vertex uv to face uv
+                    uv = vertices.uv[vertices.indices[lidx]]
+                    blen_uvs.data[lidx].uv = (uv.x, 1.0 - uv.y) # vertical flip uv
             print(blen_uvs)
-            '''
 
             # *Very* important to not remove lnors here!
             blender_mesh.validate(clean_customdata=False)
             blender_mesh.update()
-            '''
-            blender_mesh.polygons.foreach_set(
-                "vertices", triangles)
-            blender_mesh.vertices.from_pydata(
-                vertices.iter_positions(),
-                [],
-                vertices.iter_triangles())
-            '''
 
             return blender_mesh
         meshes = [create_mesh(mesh) for mesh in gltf.meshes]
