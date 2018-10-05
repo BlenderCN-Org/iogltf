@@ -13,7 +13,8 @@ def run():
     here = pathlib.Path(__file__).absolute().parent
     if here.suffix == '.blend':
         here = here.parent
-    path = here / 'glTF-Sample-Models/2.0/Avocado/glTF/Avocado.gltf'
+    #path = here / 'glTF-Sample-Models/2.0/Avocado/glTF/Avocado.gltf'
+    path = here / 'glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf'
 
     try:
         iogltf.unregister()

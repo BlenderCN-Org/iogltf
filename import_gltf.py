@@ -141,21 +141,22 @@ class VertexBuffer:
 
         pos_index = 0
         uv_index = 0
-        i = 0
+        index = 0
         for submesh in submeshes:
-            for x in submesh.pos:
-                self.pos[pos_index] = x.x
+            for v in submesh.pos:
+                self.pos[pos_index] = v.x
                 pos_index += 1
-                self.pos[pos_index] = x.y
+                self.pos[pos_index] = -v.z
                 pos_index += 1
-                self.pos[pos_index] = x.z
+                self.pos[pos_index] = v.y
                 pos_index += 1
-            for x in submesh.uv:
-                self.uv[uv_index] = x
+            for uv in submesh.uv:
+                self.uv[uv_index].x = uv.x
+                self.uv[uv_index].y = uv.y
                 uv_index += 1
-            for x in submesh.indices:
-                self.indices[i] = x
-                i += 1
+            for i in submesh.indices:
+                self.indices[index] = i
+                index += 1
 
 
 def load(context, filepath: str, global_matrix)->Set[str]:
