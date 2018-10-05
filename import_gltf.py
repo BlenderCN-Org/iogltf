@@ -134,6 +134,8 @@ class VertexBuffer:
             indices = get_indices(path, gltf, prim.indices)
             self.indices.append(indices)
 
+        # integrate meshes
+
     def get_vertex_count(self):
         count = 0
         for pos in self.pos:
@@ -143,10 +145,14 @@ class VertexBuffer:
     def iter_positions(self):
         for pos in self.pos:
             for v in pos:
-                # yield (v.x, v.y, v.z)
                 yield v.x
                 yield v.y
                 yield v.z
+
+    def iter_uv(self):
+        for i in self.iter_index():
+            for uv in uvs:
+                yield [uv.x, uv.y]
 
     def get_index_count(self):
         count = 0
@@ -262,6 +268,12 @@ def load(context, filepath: str, global_matrix)->Set[str]:
             blender_mesh.polygons.foreach_set("loop_start", starts)
             total = [3 for _ in range(triangle_count)]
             blender_mesh.polygons.foreach_set("loop_total", total)
+
+            blen_uvs = blender_mesh.uv_layers.new()
+            #blen_uvs.data.foreach_set("uv", [x for x in vertices.iter_uv()])
+            for i, uv in enumerate(vertices.iter_uv()):
+                blen_uvs.data[i].uv = uv
+            print(blen_uvs)
 
             blender_mesh.validate(clean_customdata=False)  # *Very* important to not remove lnors here!
             blender_mesh.update()
