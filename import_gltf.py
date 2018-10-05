@@ -232,6 +232,9 @@ def load(context, filepath: str, global_matrix)->Set[str]:
 
         def create_mesh(mesh: gltftypes.Mesh):
             blender_mesh = bpy.data.meshes.new(mesh.name)
+            for prim in mesh.primitives:
+                blender_mesh.materials.append(materials[prim.material])
+
             vertices = VertexBuffer(base_dir, gltf, mesh)
 
             blender_mesh.vertices.add(vertices.get_vertex_count())
@@ -260,6 +263,8 @@ def load(context, filepath: str, global_matrix)->Set[str]:
             total = [3 for _ in range(triangle_count)]
             blender_mesh.polygons.foreach_set("loop_total", total)
 
+            blender_mesh.validate(clean_customdata=False)  # *Very* important to not remove lnors here!
+            blender_mesh.update()
             '''
             blender_mesh.polygons.foreach_set(
                 "vertices", triangles)
