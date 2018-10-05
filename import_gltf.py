@@ -134,12 +134,14 @@ class VertexBuffer:
         # merge submesh
         pos_count = sum((len(x.pos) for x in submeshes), 0)
         self.pos = (ctypes.c_float * (pos_count * 3))()
+        self.nom = (ctypes.c_float * (pos_count * 3))()
         self.uv = (Float2 * (pos_count))()
 
         index_count = sum((len(x.indices) for x in submeshes), 0)
         self.indices = (ctypes.c_int * index_count)()
 
         pos_index = 0
+        nom_index = 0
         uv_index = 0
         index = 0
         for submesh in submeshes:
@@ -150,6 +152,13 @@ class VertexBuffer:
                 pos_index += 1
                 self.pos[pos_index] = v.y
                 pos_index += 1
+            for n in submesh.nom:
+                self.nom[nom_index] = n.x
+                nom_index += 1
+                self.nom[nom_index] = -n.z
+                nom_index += 1
+                self.nom[nom_index] = n.y
+                nom_index += 1
             for uv in submesh.uv:
                 self.uv[uv_index].x = uv.x
                 self.uv[uv_index].y = uv.y
@@ -210,6 +219,8 @@ def load(context, filepath: str, global_matrix)->Set[str]:
             blender_mesh.vertices.add(len(vertices.pos)/3)
             blender_mesh.vertices.foreach_set(
                 "co", vertices.pos)
+            blender_mesh.vertices.foreach_set(
+                "normal", vertices.nom)
 
             blender_mesh.loops.add(len(vertices.indices))
             blender_mesh.loops.foreach_set("vertex_index", vertices.indices)
@@ -223,10 +234,13 @@ def load(context, filepath: str, global_matrix)->Set[str]:
 
             blen_uvs = blender_mesh.uv_layers.new()
             for blen_poly in blender_mesh.polygons:
+                blen_poly.use_smooth = True
                 for lidx in blen_poly.loop_indices:
+                    index = vertices.indices[lidx]
                     # vertex uv to face uv
-                    uv = vertices.uv[vertices.indices[lidx]]
-                    blen_uvs.data[lidx].uv = (uv.x, 1.0 - uv.y) # vertical flip uv
+                    uv = vertices.uv[index]
+                    blen_uvs.data[lidx].uv = (
+                        uv.x, 1.0 - uv.y)  # vertical flip uv
             print(blen_uvs)
 
             # *Very* important to not remove lnors here!
