@@ -148,20 +148,45 @@ class VertexBuffer:
                 yield v.y
                 yield v.z
 
-    def get_triangle_count(self):
+    def get_index_count(self):
         count = 0
         for indices in self.indices:
             count += len(indices)
-        return count/3
+        return count
 
-    def iter_triangles(self):
+    def iter_index(self):
         offset = 0
         for i, indices in enumerate(self.indices):
-            for j in range(0, len(indices), 3):
-                yield (offset+indices[j],
-                       offset+indices[j+1],
-                       offset+indices[j+2])
+            for j in indices:
+                yield j + offset
             offset += len(self.pos[i])
+
+    def iter_face(self):
+        if type(self.pos) is list:
+            count = self.get_vertex_count()
+            pos = (Float3 * count)()
+            nom = (Float3 * count)()
+            uv = (Float2 * count)()
+            index = 0
+            for i in range(self.pos):
+                for p, n, u in zip(self.pos, self.nom, self.uv):
+                    pos[index] = p
+                    nom[index] = n
+                    uv[index] = u
+                    index += 1
+            self.pos = pos
+            self.nom = nom
+            self.uv = uv
+
+        for i0, i1, i2 in self.iter_triangles():
+            return ([i0, i1, i2], # pos
+                    [] # nom
+                    [i0, i1, i2], # uv
+                    None, # material
+                    None, # smooth group
+                    None, # obj
+                    [], # ?
+                    )
 
 
 def load(context, filepath: str, global_matrix)->Set[str]:
@@ -214,11 +239,30 @@ def load(context, filepath: str, global_matrix)->Set[str]:
             blender_mesh.vertices.foreach_set(
                 "co", positions)
 
-            blender_mesh.polygons.add(vertices.get_triangle_count())
-            triangles = [x for x in vertices.iter_triangles()][0:1]
+            index_count = vertices.get_index_count()
+            blender_mesh.loops.add(index_count)
+            '''
+            for f in faces:
+                    vidx = f[0]
+                    nbr_vidx = len(vidx)
+                    loops_vert_idx.extend(vidx)
+                    faces_loop_start.append(lidx)
+                    faces_loop_total.append(nbr_vidx)
+                    lidx += nbr_vidx
+            '''
+            indices = [x for x in vertices.iter_index()]
+            blender_mesh.loops.foreach_set("vertex_index", indices)
+
+            triangle_count = int(index_count / 3)
+            blender_mesh.polygons.add(triangle_count)
+            starts = [i * 3 for i in range(triangle_count)]
+            blender_mesh.polygons.foreach_set("loop_start", starts)
+            total = [3 for _ in range(triangle_count)]
+            blender_mesh.polygons.foreach_set("loop_total", total)
+
+            '''
             blender_mesh.polygons.foreach_set(
                 "vertices", triangles)
-            '''
             blender_mesh.vertices.from_pydata(
                 vertices.iter_positions(),
                 [],
