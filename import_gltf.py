@@ -105,94 +105,52 @@ def get_indices(base: pathlib.Path, gltf: gltftypes.glTF, accessor_index: int):
         return (ctypes.c_uint * accessor.count).from_buffer_copy(segment)
 
 
+class Submesh:
+    def __init__(self, path: pathlib.Path, gltf: gltftypes.glTF, prim: gltftypes.MeshPrimitive)->None:
+        pos_index = prim.attributes['POSITION']
+        self.pos = get_array(path, gltf, pos_index, Float3)
+
+        self.nom = None
+        if 'NORMAL' in prim.attributes:
+            nom_index = prim.attributes['NORMAL']
+            self.nom = get_array(path, gltf, nom_index, Float3)
+            if len(self.nom) != len(self.pos):
+                raise Exception('nom len is not equals to pos')
+
+        self.um = None
+        if 'TEXCOORD_0' in prim.attributes:
+            uv_index = prim.attributes['TEXCOORD_0']
+            self.uv = get_array(path, gltf, uv_index, Float2)
+            if len(self.uv) != len(self.pos):
+                raise Exception('uv len is not equals to pos')
+
+        self.indices = get_indices(path, gltf, prim.indices)
+
+
 class VertexBuffer:
-    def __init__(self, path: pathlib.Path, gltf: gltftypes.glTF, mesh: gltftypes.Mesh):
-        self.pos = []
-        self.nom = []
-        self.uv = []
-        self.indices = []
-        self.materials = []
-        for prim in mesh.primitives:
-            if 'POSITION' in prim.attributes:
-                pos_index = prim.attributes['POSITION']
-                pos = get_array(path, gltf, pos_index, Float3)
-                self.pos.append(pos)
-            if 'NORMAL' in prim.attributes:
-                nom_index = prim.attributes['NORMAL']
-                nom = get_array(path, gltf, nom_index, Float3)
-                self.nom.append(nom)
-            if 'TEXCOORD_0' in prim.attributes:
-                uv_index = prim.attributes['TEXCOORD_0']
-                uv = get_array(path, gltf, uv_index, Float2)
-                self.uv.append(uv)
-            '''
-            if 'TANGENT' in prim.attributes:
-                tan_index = prim.attributes['TANGENT']
-                tan = get_array(gltf, tan_index, Float4)
-            '''
+    def __init__(self, path: pathlib.Path, gltf: gltftypes.glTF, mesh: gltftypes.Mesh)->None:
+        submeshes = [Submesh(path, gltf, prim) for prim in mesh.primitives]
 
-            indices = get_indices(path, gltf, prim.indices)
-            self.indices.append(indices)
+        # merge submesh
+        pos_count = sum((len(x.pos) for x in submeshes), 0)
+        self.pos = (ctypes.c_float * (pos_count * 3))()
 
-        # integrate meshes
+        index_count = sum((len(x.indices) for x in submeshes), 0)
+        self.indices = (ctypes.c_int * index_count)()
 
-    def get_vertex_count(self):
-        count = 0
-        for pos in self.pos:
-            count += len(pos)
-        return count
-
-    def iter_positions(self):
-        for pos in self.pos:
-            for v in pos:
-                yield v.x
-                yield v.y
-                yield v.z
-
-    def iter_uv(self):
-        for i in self.iter_index():
-            for uv in uvs:
-                yield [uv.x, uv.y]
-
-    def get_index_count(self):
-        count = 0
-        for indices in self.indices:
-            count += len(indices)
-        return count
-
-    def iter_index(self):
-        offset = 0
-        for i, indices in enumerate(self.indices):
-            for j in indices:
-                yield j + offset
-            offset += len(self.pos[i])
-
-    def iter_face(self):
-        if type(self.pos) is list:
-            count = self.get_vertex_count()
-            pos = (Float3 * count)()
-            nom = (Float3 * count)()
-            uv = (Float2 * count)()
-            index = 0
-            for i in range(self.pos):
-                for p, n, u in zip(self.pos, self.nom, self.uv):
-                    pos[index] = p
-                    nom[index] = n
-                    uv[index] = u
-                    index += 1
-            self.pos = pos
-            self.nom = nom
-            self.uv = uv
-
-        for i0, i1, i2 in self.iter_triangles():
-            return ([i0, i1, i2], # pos
-                    [] # nom
-                    [i0, i1, i2], # uv
-                    None, # material
-                    None, # smooth group
-                    None, # obj
-                    [], # ?
-                    )
+        pos_index = 0
+        i = 0
+        for submesh in submeshes:
+            for x in submesh.pos:
+                self.pos[pos_index] = x.x
+                pos_index += 1
+                self.pos[pos_index] = x.y
+                pos_index += 1
+                self.pos[pos_index] = x.z
+                pos_index += 1
+            for x in submesh.indices:
+                self.indices[i] = x
+                i += 1
 
 
 def load(context, filepath: str, global_matrix)->Set[str]:
@@ -243,39 +201,32 @@ def load(context, filepath: str, global_matrix)->Set[str]:
 
             vertices = VertexBuffer(base_dir, gltf, mesh)
 
-            blender_mesh.vertices.add(vertices.get_vertex_count())
-            positions = [x for x in vertices.iter_positions()] 
+            blender_mesh.vertices.add(len(vertices.pos)/3)
+            positions = [x for x in vertices.pos]
             blender_mesh.vertices.foreach_set(
                 "co", positions)
 
-            index_count = vertices.get_index_count()
-            blender_mesh.loops.add(index_count)
-            '''
-            for f in faces:
-                    vidx = f[0]
-                    nbr_vidx = len(vidx)
-                    loops_vert_idx.extend(vidx)
-                    faces_loop_start.append(lidx)
-                    faces_loop_total.append(nbr_vidx)
-                    lidx += nbr_vidx
-            '''
-            indices = [x for x in vertices.iter_index()]
+            blender_mesh.loops.add(len(vertices.indices))
+            indices = [x for x in vertices.indices]
             blender_mesh.loops.foreach_set("vertex_index", indices)
 
-            triangle_count = int(index_count / 3)
+            triangle_count = int(len(vertices.indices) / 3)
             blender_mesh.polygons.add(triangle_count)
             starts = [i * 3 for i in range(triangle_count)]
             blender_mesh.polygons.foreach_set("loop_start", starts)
             total = [3 for _ in range(triangle_count)]
             blender_mesh.polygons.foreach_set("loop_total", total)
 
+            '''
             blen_uvs = blender_mesh.uv_layers.new()
             #blen_uvs.data.foreach_set("uv", [x for x in vertices.iter_uv()])
             for i, uv in enumerate(vertices.iter_uv()):
                 blen_uvs.data[i].uv = uv
             print(blen_uvs)
+            '''
 
-            blender_mesh.validate(clean_customdata=False)  # *Very* important to not remove lnors here!
+            # *Very* important to not remove lnors here!
+            blender_mesh.validate(clean_customdata=False)
             blender_mesh.update()
             '''
             blender_mesh.polygons.foreach_set(
