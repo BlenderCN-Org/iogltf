@@ -17,6 +17,9 @@ if "import_gltf" in locals():
     import importlib
     importlib.reload(import_gltf)
     importlib.reload(gltftypes)
+    importlib.reload(gltfnode)
+    importlib.reload(group_io)
+from . import import_gltf, gltftypes, gltfnode, group_io
 
 
 bl_info = {
@@ -57,8 +60,6 @@ class ImportGLTF(bpy.types.Operator, ImportHelper):
 
         keywords["global_matrix"] = global_matrix
 
-        from . import gltftypes
-        from . import import_gltf
         return import_gltf.load(context, **keywords)
 
 

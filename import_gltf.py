@@ -8,7 +8,8 @@ from progress_report import ProgressReport  # , ProgressReportSubstep
 from bpy_extras.image_utils import load_image
 
 from . import gltftypes
-
+from . import gltfnode
+from . import group_io
 
 class Float2(ctypes.Structure):
     _pack_ = 1
@@ -160,7 +161,7 @@ class VertexBuffer:
                 nom_index += 1
             for uv in submesh.uv:
                 self.uv[uv_index].x = uv.x
-                self.uv[uv_index].y = uv.y
+                self.uv[uv_index].y = 2-uv.y
                 uv_index += 1
             for i in submesh.indices:
                 self.indices[index] = i
@@ -192,44 +193,59 @@ def load(context, filepath: str, global_matrix)->Set[str]:
         progress.step("Done, loading materials:%i..." % len(gltf.materials))
 
         def create_material(material: gltftypes.Material):
+            import rna_xml
+
             blender_material = bpy.data.materials.new(material.name)
             blender_material['js'] = json.dumps(material.js, indent=2)
 
             blender_material.use_nodes = True
             tree = blender_material.node_tree
-            for x in tree.nodes:
-                print(x)
+
+            tree.nodes.remove(tree.nodes['Principled BSDF'])
+            groups = group_io.import_groups(gltfnode.groups)
+            bsdf = tree.nodes.new('ShaderNodeGroup')
+            bsdf.node_tree = groups['glTF Metallic Roughness']
+
+            def create_image_node(texture_index: int):
+                # uv => tex
+                image_node = tree.nodes.new(
+                    type='ShaderNodeTexImage')
+                image_node.image = textures[texture_index]
+                tree.links.new(
+                    tree.nodes.new('ShaderNodeTexCoord').outputs['UV'],  image_node.inputs['Vector'])
+                return image_node
+
+            def bsdf_link_image(texture_index: int, input: str):
+                texture = create_image_node(texture_index)
+                tree.links.new(
+                    texture.outputs["Color"],
+                    bsdf.inputs[input])
+
+            if material.normalTexture:
+                texture_node = create_image_node(material.normalTexture.index)
+                normalmap_node = tree.nodes.new(type='ShaderNodeNormalMap')
+                tree.links.new(
+                    texture_node.outputs['Color'], normalmap_node.inputs['Color'])
+                tree.links.new(
+                    normalmap_node.outputs['Normal'], bsdf.inputs['Normal'])
 
             pbr = material.pbrMetallicRoughness
             if pbr:
-                bsdf = tree.nodes['Principled BSDF']
-                def bsdf_link_image(texture_index: int, input: str):
-                    texture = tree.nodes.new(
-                        type='ShaderNodeTexImage')
-                    texture.image = textures[texture_index]
-                    tree.links.new(
-                        texture.outputs["Color"], 
-                        bsdf.inputs[input])
-                    # uv => tex
-                    tex_coord = tree.nodes.new('ShaderNodeTexCoord')
-                    tree.links.new(
-                        tex_coord.outputs['UV'],  texture.inputs['Vector'])
-
                 if pbr.baseColorTexture and pbr.baseColorFactor:
                     # mix
-                    mix = tree.nodes.new(type = 'ShaderNodeMixRGB')
+                    mix = tree.nodes.new(type='ShaderNodeMixRGB')
                     mix.blend_type = 'MULTIPLY'
                     mix.inputs[2].default_value = pbr.baseColorFactor
 
                 elif pbr.baseColorTexture:
-                    bsdf_link_image(pbr.baseColorTexture.index, 'Base Color')
+                    bsdf_link_image(pbr.baseColorTexture.index, 'BaseColor')
                 else:
                     # factor
                     pass
 
                 if pbr.metallicRoughnessTexture:
-                    bsdf_link_image(pbr.metallicRoughnessTexture.index, 'Metallic')
-                    bsdf_link_image(pbr.metallicRoughnessTexture.index, 'Roughness')
+                    bsdf_link_image(
+                        pbr.metallicRoughnessTexture.index, 'MetallicRoughness')
 
             return blender_material
         materials = [create_material(material) for material in gltf.materials]
@@ -269,7 +285,7 @@ def load(context, filepath: str, global_matrix)->Set[str]:
                     # vertex uv to face uv
                     uv = vertices.uv[index]
                     blen_uvs.data[lidx].uv = (
-                        uv.x, 1.0 - uv.y)  # vertical flip uv
+                        uv.x, uv.y)  # vertical flip uv
             print(blen_uvs)
 
             # *Very* important to not remove lnors here!
