@@ -193,6 +193,7 @@ def load(context, filepath: str, global_matrix)->Set[str]:
 
         def create_material(material: gltftypes.Material):
             blender_material = bpy.data.materials.new(material.name)
+            blender_material['js'] = json.dumps(material.js, indent=2)
 
             blender_material.use_nodes = True
             tree = blender_material.node_tree
@@ -202,6 +203,18 @@ def load(context, filepath: str, global_matrix)->Set[str]:
             pbr = material.pbrMetallicRoughness
             if pbr:
                 bsdf = tree.nodes['Principled BSDF']
+                def bsdf_link_image(texture_index: int, input: str):
+                    texture = tree.nodes.new(
+                        type='ShaderNodeTexImage')
+                    texture.image = textures[texture_index]
+                    tree.links.new(
+                        texture.outputs["Color"], 
+                        bsdf.inputs[input])
+                    # uv => tex
+                    tex_coord = tree.nodes.new('ShaderNodeTexCoord')
+                    tree.links.new(
+                        tex_coord.outputs['UV'],  texture.inputs['Vector'])
+
                 if pbr.baseColorTexture and pbr.baseColorFactor:
                     # mix
                     mix = tree.nodes.new(type = 'ShaderNodeMixRGB')
@@ -209,49 +222,14 @@ def load(context, filepath: str, global_matrix)->Set[str]:
                     mix.inputs[2].default_value = pbr.baseColorFactor
 
                 elif pbr.baseColorTexture:
-
-                    # image => bsdf
-                    texture = tree.nodes.new(
-                        type='ShaderNodeTexImage')
-                    texture.image = textures[pbr.baseColorTexture.index]
-                    use_alpha = False
-                    tree.links.new(
-                        texture.outputs["Alpha" if use_alpha else "Color"], 
-                        bsdf.inputs["Base Color"])
-                    # uv => tex
-                    tex_coord = tree.nodes.new("ShaderNodeTexCoord")
-                    tree.links.new(
-                        tex_coord.outputs['UV'],  texture.inputs["Vector"])
+                    bsdf_link_image(pbr.baseColorTexture.index, 'Base Color')
                 else:
                     # factor
                     pass
 
                 if pbr.metallicRoughnessTexture:
-                    # image => bsdf
-                    texture = tree.nodes.new(
-                        type='ShaderNodeTexImage')
-                    texture.image = textures[pbr.metallicRoughnessTexture.index]
-                    tree.links.new(
-                        texture.outputs["Color"], 
-                        bsdf.inputs["Metallic"])
-
-                    # uv => tex
-                    tex_coord = tree.nodes.new("ShaderNodeTexCoord")
-                    tree.links.new(
-                        tex_coord.outputs['UV'],  texture.inputs["Vector"])
-
-                    # image => bsdf
-                    texture = tree.nodes.new(
-                        type='ShaderNodeTexImage')
-                    texture.image = textures[pbr.metallicRoughnessTexture.index]
-                    tree.links.new(
-                        texture.outputs["Color"], 
-                        bsdf.inputs["Roughness"])
-
-                    # uv => tex
-                    tex_coord = tree.nodes.new("ShaderNodeTexCoord")
-                    tree.links.new(
-                        tex_coord.outputs['UV'],  texture.inputs["Vector"])
+                    bsdf_link_image(pbr.metallicRoughnessTexture.index, 'Metallic')
+                    bsdf_link_image(pbr.metallicRoughnessTexture.index, 'Roughness')
 
             return blender_material
         materials = [create_material(material) for material in gltf.materials]
