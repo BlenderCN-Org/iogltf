@@ -206,6 +206,8 @@ def load(context, filepath: str, global_matrix)->Set[str]:
             bsdf = tree.nodes.new('ShaderNodeGroup')
             bsdf.node_tree = groups['glTF Metallic Roughness']
 
+            tree.links.new(bsdf.outputs['Shader'], tree.nodes['Material Output'].inputs['Surface'])
+
             def create_image_node(texture_index: int):
                 # uv => tex
                 image_node = tree.nodes.new(
@@ -222,12 +224,13 @@ def load(context, filepath: str, global_matrix)->Set[str]:
                     bsdf.inputs[input])
 
             if material.normalTexture:
-                texture_node = create_image_node(material.normalTexture.index)
-                normalmap_node = tree.nodes.new(type='ShaderNodeNormalMap')
-                tree.links.new(
-                    texture_node.outputs['Color'], normalmap_node.inputs['Color'])
-                tree.links.new(
-                    normalmap_node.outputs['Normal'], bsdf.inputs['Normal'])
+                bsdf_link_image(material.normalTexture.index, 'Normal')
+
+            if material.occlusionTexture:
+                bsdf_link_image(material.occlusionTexture.index, 'Occlusion')
+
+            if material.emissiveTexture:
+                bsdf_link_image(material.emissiveTexture.index, 'Emissive')
 
             pbr = material.pbrMetallicRoughness
             if pbr:
