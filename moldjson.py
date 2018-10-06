@@ -162,6 +162,7 @@ class JsonSchema:
                 yield f'class {self.title}:'
                 yield f'    """{self.description}"""'
                 yield '    def __init__(self, js: dict = None)->None:'
+                yield '        self.js: dict = js'
                 for k, v in self.properties.items():
                     type_str, default_str, constructor = v.to_annotation(self.title, k)
                     yield f'        self.{k}: {type_str} = {default_str}'

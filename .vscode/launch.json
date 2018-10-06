@@ -4,18 +4,19 @@
     // 詳細情報は次を確認してください: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        {
-            "name": "sample.py",
-            "type": "python",
-            "request": "launch",
-            "program": "${workspaceFolder}/sample.py",
-            "console": "integratedTerminal"
-        },
+
         {
             "name": "blenderedit.py",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/blenderedit.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "generate.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/generate.py",
             "console": "integratedTerminal"
         },
         {

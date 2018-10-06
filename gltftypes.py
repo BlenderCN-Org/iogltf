@@ -30,6 +30,7 @@ class AccessorSparseIndices_componentType(Enum):
 class AccessorSparseIndices:
     """Index array of size `count` that points to those accessor attributes that deviate from their initialization value. Indices must strictly increase."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -58,6 +59,7 @@ class AccessorSparseIndices:
 class AccessorSparseValues:
     """Array of size `count` times number of components, storing the displaced accessor attributes pointed by `indices`. Substituted values must have the same `componentType` and number of components as the base accessor."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -81,6 +83,7 @@ class AccessorSparseValues:
 class AccessorSparse:
     """Sparse storage of attributes that deviate from their initialization value."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -109,6 +112,7 @@ class AccessorSparse:
 class Accessor:
     """A typed view into a bufferView.  A bufferView contains raw binary data.  An accessor provides a typed view into a bufferView or a subset of a bufferView similar to how WebGL's `vertexAttribPointer()` defines an attribute in a buffer."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -177,6 +181,7 @@ class AnimationChannelTarget_path(Enum):
 class AnimationChannelTarget:
     """The index of the node and TRS property to target."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -200,6 +205,7 @@ class AnimationChannelTarget:
 class AnimationChannel:
     """Targets an animation's sampler at a node's property."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -229,6 +235,7 @@ class AnimationSampler_interpolation(Enum):
 class AnimationSampler:
     """Combines input and output accessors with an interpolation algorithm to define a keyframe graph (but not its target)."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -257,6 +264,7 @@ class AnimationSampler:
 class Animation:
     """A keyframe animation."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -285,6 +293,7 @@ class Animation:
 class Asset:
     """Metadata about the glTF asset."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -318,6 +327,7 @@ class Asset:
 class Buffer:
     """A buffer points to binary geometry, animation, or skins."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -351,6 +361,7 @@ class BufferView_target(Enum):
 class BufferView:
     """A view into a buffer generally representing a subset of the buffer."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -394,6 +405,7 @@ class BufferView:
 class CameraOrthographic:
     """An orthographic camera containing properties to create an orthographic projection matrix."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -427,6 +439,7 @@ class CameraOrthographic:
 class CameraPerspective:
     """A perspective camera containing properties to create a perspective projection matrix."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -465,6 +478,7 @@ class Camera_type(Enum):
 class Camera:
     """A camera's projection.  A node can reference a camera to apply a transform to place the camera in the scene."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -503,6 +517,7 @@ class Image_mimeType(Enum):
 class Image:
     """Image data used to create a texture. Image can be referenced by URI or `bufferView` index. `mimeType` is required in the latter case."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -536,6 +551,7 @@ class Image:
 class TextureInfo:
     """The base color texture."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -559,6 +575,7 @@ class TextureInfo:
 class MaterialPBRMetallicRoughness:
     """A set of parameter values that are used to define the metallic-roughness material model from Physically-Based Rendering (PBR) methodology. When not specified, all the default values of `pbrMetallicRoughness` apply."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -596,6 +613,7 @@ class MaterialPBRMetallicRoughness:
 class MaterialNormalTextureInfo:
     """The normal map texture."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -624,6 +642,7 @@ class MaterialNormalTextureInfo:
 class MaterialOcclusionTextureInfo:
     """The occlusion map texture."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -658,6 +677,7 @@ class Material_alphaMode(Enum):
 class Material:
     """The material appearance of a primitive."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -725,6 +745,7 @@ class MeshPrimitive_mode(Enum):
 class MeshPrimitive:
     """Geometry to be rendered with the given material."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -763,6 +784,7 @@ class MeshPrimitive:
 class Mesh:
     """A set of primitives to be rendered.  A node can contain one mesh.  A node's transform places the mesh in the scene."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -790,6 +812,7 @@ class Mesh:
 class Node:
     """A node in the node hierarchy.  When the node contains `skin`, all `mesh.primitives` must contain `JOINTS_0` and `WEIGHTS_0` attributes.  A node can have either a `matrix` or any combination of `translation`/`rotation`/`scale` (TRS) properties. TRS properties are converted to matrices and postmultiplied in the `T * R * S` order to compose the transformation matrix; first the scale is applied to the vertices, then the rotation, and then the translation. If none are provided, the transform is the identity. When a node is targeted for animation (referenced by an animation.channel.target), only TRS properties may be present; `matrix` will not be present."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -873,6 +896,7 @@ class Sampler_wrapT(Enum):
 class Sampler:
     """Texture sampler properties for filtering and wrapping modes."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -911,6 +935,7 @@ class Sampler:
 class Scene:
     """The root nodes of a scene."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -933,6 +958,7 @@ class Scene:
 class Skin:
     """Joints and matrices defining a skin."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -965,6 +991,7 @@ class Skin:
 class Texture:
     """A texture and its sampler."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):
@@ -993,6 +1020,7 @@ class Texture:
 class glTF:
     """The root object for a glTF asset."""
     def __init__(self, js: dict = None)->None:
+        self.js: dict = js
         self.extensions: Dict[str, Any] = {}
         """Dictionary object with extension-specific objects."""
         if (js and "extensions" in js):

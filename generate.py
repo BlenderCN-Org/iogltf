@@ -8,7 +8,7 @@ path = pathlib.Path('gltf/specification/2.0/schema/glTF.schema.json')
 schema = moldjson.parse_schema(path)
 
 #print(schema)
-schema.to_py(pathlib.Path('gltf.py'))
+schema.to_py(pathlib.Path('gltftypes.py'))
 
 # git clone https://github.com/KhronosGroup/glTF-Sample-Models.git
 def traverse(path: pathlib.Path)->Generator[pathlib.Path, None, None]:
