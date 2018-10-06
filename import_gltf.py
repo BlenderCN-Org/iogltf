@@ -4,9 +4,8 @@ import ctypes
 from typing import Set, Dict
 
 import bpy
-from progress_report import ProgressReport, ProgressReportSubstep
+from progress_report import ProgressReport  # , ProgressReportSubstep
 from bpy_extras.image_utils import load_image
-from bpy_extras import node_shader_utils
 
 from . import gltftypes
 
@@ -194,14 +193,29 @@ def load(context, filepath: str, global_matrix)->Set[str]:
 
         def create_material(material: gltftypes.Material):
             blender_material = bpy.data.materials.new(material.name)
-            wrap = node_shader_utils.PrincipledBSDFWrapper(
-                blender_material, is_readonly=False)
-            wrap.use_nodes = True
+
+            blender_material.use_nodes = True
+            tree = blender_material.node_tree
+            for x in tree.nodes:
+                print(x)
+
             pbr = material.pbrMetallicRoughness
             if pbr:
                 if pbr.baseColorTexture.index != -1:
-                    wrap.diffuse_texture.image = textures[pbr.baseColorTexture.index]
-                    wrap.diffuse_texture.texcoords = 'UV'
+                    # image => bsdf
+                    base_color_texture = tree.nodes.new(
+                        type='ShaderNodeTexImage')
+                    base_color_texture.image = textures[pbr.baseColorTexture.index]
+                    use_alpha = False
+                    bsdf = tree.nodes['Principled BSDF']
+                    tree.links.new(
+                        base_color_texture.outputs["Alpha" if use_alpha else "Color"], 
+                        bsdf.inputs["Base Color"])
+                    # uv => tex
+                    tex_coord = tree.nodes.new("ShaderNodeTexCoord")
+                    tree.links.new(
+                        tex_coord.outputs['UV'],  base_color_texture.inputs["Vector"])
+
             return blender_material
         materials = [create_material(material) for material in gltf.materials]
         print(materials)
