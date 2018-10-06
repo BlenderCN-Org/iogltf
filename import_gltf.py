@@ -201,20 +201,57 @@ def load(context, filepath: str, global_matrix)->Set[str]:
 
             pbr = material.pbrMetallicRoughness
             if pbr:
-                if pbr.baseColorTexture.index != -1:
+                bsdf = tree.nodes['Principled BSDF']
+                if pbr.baseColorTexture and pbr.baseColorFactor:
+                    # mix
+                    mix = tree.nodes.new(type = 'ShaderNodeMixRGB')
+                    mix.blend_type = 'MULTIPLY'
+                    mix.inputs[2].default_value = pbr.baseColorFactor
+
+                elif pbr.baseColorTexture:
+
                     # image => bsdf
-                    base_color_texture = tree.nodes.new(
+                    texture = tree.nodes.new(
                         type='ShaderNodeTexImage')
-                    base_color_texture.image = textures[pbr.baseColorTexture.index]
+                    texture.image = textures[pbr.baseColorTexture.index]
                     use_alpha = False
-                    bsdf = tree.nodes['Principled BSDF']
                     tree.links.new(
-                        base_color_texture.outputs["Alpha" if use_alpha else "Color"], 
+                        texture.outputs["Alpha" if use_alpha else "Color"], 
                         bsdf.inputs["Base Color"])
                     # uv => tex
                     tex_coord = tree.nodes.new("ShaderNodeTexCoord")
                     tree.links.new(
-                        tex_coord.outputs['UV'],  base_color_texture.inputs["Vector"])
+                        tex_coord.outputs['UV'],  texture.inputs["Vector"])
+                else:
+                    # factor
+                    pass
+
+                if pbr.metallicRoughnessTexture:
+                    # image => bsdf
+                    texture = tree.nodes.new(
+                        type='ShaderNodeTexImage')
+                    texture.image = textures[pbr.metallicRoughnessTexture.index]
+                    tree.links.new(
+                        texture.outputs["Color"], 
+                        bsdf.inputs["Metallic"])
+
+                    # uv => tex
+                    tex_coord = tree.nodes.new("ShaderNodeTexCoord")
+                    tree.links.new(
+                        tex_coord.outputs['UV'],  texture.inputs["Vector"])
+
+                    # image => bsdf
+                    texture = tree.nodes.new(
+                        type='ShaderNodeTexImage')
+                    texture.image = textures[pbr.metallicRoughnessTexture.index]
+                    tree.links.new(
+                        texture.outputs["Color"], 
+                        bsdf.inputs["Roughness"])
+
+                    # uv => tex
+                    tex_coord = tree.nodes.new("ShaderNodeTexCoord")
+                    tree.links.new(
+                        tex_coord.outputs['UV'],  texture.inputs["Vector"])
 
             return blender_material
         materials = [create_material(material) for material in gltf.materials]
