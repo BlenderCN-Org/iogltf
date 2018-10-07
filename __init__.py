@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import (
+from bpy.props import (  # pylint: disable=E0401
     StringProperty,
     FloatProperty,
     IntProperty,
@@ -15,10 +15,10 @@ from bpy_extras.io_utils import (
 if "import_gltf" in locals():
     print('reload', 'import_gltf')
     import importlib
-    importlib.reload(import_gltf)
-    importlib.reload(gltftypes)
-    importlib.reload(blender_io)
-from . import import_gltf, gltftypes, blender_io
+    importlib.reload(import_gltf)  # pylint: disable=E0601
+    importlib.reload(gltftypes)  # pylint: disable=E0601
+    importlib.reload(blender_io)  # pylint: disable=E0601
+from . import import_gltf, gltftypes, blender_io # pylint: disable=C0413
 
 
 bl_info = {
@@ -62,7 +62,7 @@ class ImportGLTF(bpy.types.Operator, ImportHelper):
         return import_gltf.load(context, **keywords)
 
 
-def menu_func_import(self, context):
+def menu_func_import(self, _context):
     self.layout.operator(ImportGLTF.bl_idname,
                          text="GL Transmission Format (.gltf)")
 

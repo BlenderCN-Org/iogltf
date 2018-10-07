@@ -26,33 +26,37 @@ def get_view_bytes(base: pathlib.Path, gltf: gltftypes.glTF, view_index: int)->b
 def get_accessor_type_to_count(accessor_type: gltftypes.Accessor_type)->int:
     if accessor_type == gltftypes.Accessor_type.SCALAR:
         return 1
-    if accessor_type == gltftypes.Accessor_type.VEC2:
+    elif accessor_type == gltftypes.Accessor_type.VEC2:
         return 2
-    if accessor_type == gltftypes.Accessor_type.VEC3:
+    elif accessor_type == gltftypes.Accessor_type.VEC3:
         return 3
-    if accessor_type == gltftypes.Accessor_type.VEC4:
+    elif accessor_type == gltftypes.Accessor_type.VEC4:
         return 4
-    if accessor_type == gltftypes.Accessor_type.MAT2:
+    elif accessor_type == gltftypes.Accessor_type.MAT2:
         return 4
-    if accessor_type == gltftypes.Accessor_type.MAT3:
+    elif accessor_type == gltftypes.Accessor_type.MAT3:
         return 9
-    if accessor_type == gltftypes.Accessor_type.MAT4:
+    elif accessor_type == gltftypes.Accessor_type.MAT4:
         return 16
+    else:
+        raise Exception()
 
 
 def get_accessor_component_type_to_len(component_type: gltftypes.Accessor_componentType)->int:
     if component_type == gltftypes.Accessor_componentType.BYTE:
         return 1
-    if component_type == gltftypes.Accessor_componentType.SHORT:
+    elif component_type == gltftypes.Accessor_componentType.SHORT:
         return 2
-    if component_type == gltftypes.Accessor_componentType.UNSIGNED_BYTE:
+    elif component_type == gltftypes.Accessor_componentType.UNSIGNED_BYTE:
         return 1
-    if component_type == gltftypes.Accessor_componentType.UNSIGNED_SHORT:
+    elif component_type == gltftypes.Accessor_componentType.UNSIGNED_SHORT:
         return 2
-    if component_type == gltftypes.Accessor_componentType.UNSIGNED_INT:
+    elif component_type == gltftypes.Accessor_componentType.UNSIGNED_INT:
         return 4
-    if component_type == gltftypes.Accessor_componentType.FLOAT:
+    elif component_type == gltftypes.Accessor_componentType.FLOAT:
         return 4
+    else:
+        raise Exception()
 
 
 def get_accessor_byteslen(accessor: gltftypes.Accessor)->int:
@@ -76,9 +80,9 @@ def get_indices(base: pathlib.Path, gltf: gltftypes.glTF, accessor_index: int):
         accessor.byteOffset:accessor.byteOffset+accessor_byte_len]
     if (accessor.componentType == gltftypes.Accessor_componentType.SHORT
             or accessor.componentType == gltftypes.Accessor_componentType.UNSIGNED_SHORT):
-        return (ctypes.c_ushort * accessor.count).from_buffer_copy(segment)
+        return (ctypes.c_ushort * accessor.count).from_buffer_copy(segment) # type: ignore
     elif accessor.componentType == gltftypes.Accessor_componentType.UNSIGNED_INT:
-        return (ctypes.c_uint * accessor.count).from_buffer_copy(segment)
+        return (ctypes.c_uint * accessor.count).from_buffer_copy(segment) # type: ignore
 
 
 class Float2(ctypes.Structure):
@@ -124,10 +128,10 @@ class VertexBuffer:
         self.nom = (ctypes.c_float * (pos_count * 3))()
         self.uv = (Float2 * (pos_count))()
 
-        def index_count(prim):
+        def index_count(prim: gltftypes.MeshPrimitive)->int:
             return gltf.accessors[prim.indices].count
-        index_count = sum((index_count(prim) for prim in mesh.primitives), 0)
-        self.indices = (ctypes.c_int * index_count)()
+        index_count = sum((index_count(prim) for prim in mesh.primitives), 0) # type: ignore
+        self.indices = (ctypes.c_int * index_count)() # type: ignore
 
         pos_index = 0
         nom_index = 0

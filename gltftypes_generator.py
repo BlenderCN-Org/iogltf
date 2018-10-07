@@ -20,11 +20,11 @@ def traverse(path: pathlib.Path)->Generator[pathlib.Path, None, None]:
                 yield x
 
 import json
-import gltf
+import gltftypes
 gltf_path = pathlib.Path('glTF-Sample-Models/2.0')
 for x in traverse(gltf_path):
     print(x)
     with x.open() as f:
         js = json.load(f) 
-        parsed = gltf.from_json(js)
+        parsed = gltftypes.from_json(js)
         print(parsed)

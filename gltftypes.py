@@ -51,10 +51,10 @@ class AccessorSparseIndices:
         if (js and "byteOffset" in js):
             self.byteOffset: int = js["byteOffset"]
 
-        self.componentType: Optional[AccessorSparseIndices_componentType] = None
+        self.componentType: AccessorSparseIndices_componentType = None
         """The indices data type."""
         if (js and "componentType" in js):
-            self.componentType: Optional[AccessorSparseIndices_componentType] = AccessorSparseIndices_componentType(js["componentType"])
+            self.componentType: AccessorSparseIndices_componentType = AccessorSparseIndices_componentType(js["componentType"])
 
 class AccessorSparseValues:
     """Array of size `count` times number of components, storing the displaced accessor attributes pointed by `indices`. Substituted values must have the same `componentType` and number of components as the base accessor."""
@@ -138,10 +138,10 @@ class Accessor:
         if (js and "byteOffset" in js):
             self.byteOffset: int = js["byteOffset"]
 
-        self.componentType: Optional[Accessor_componentType] = None
+        self.componentType: Accessor_componentType = None
         """The datatype of components in the attribute."""
         if (js and "componentType" in js):
-            self.componentType: Optional[Accessor_componentType] = Accessor_componentType(js["componentType"])
+            self.componentType: Accessor_componentType = Accessor_componentType(js["componentType"])
 
         self.normalized: bool = False
         """Specifies whether integer data values should be normalized."""
@@ -153,10 +153,10 @@ class Accessor:
         if (js and "count" in js):
             self.count: int = js["count"]
 
-        self.type: Optional[Accessor_type] = None
+        self.type: Accessor_type = None
         """Specifies if the attribute is a scalar, vector, or matrix."""
         if (js and "type" in js):
-            self.type: Optional[Accessor_type] = Accessor_type(js["type"])
+            self.type: Accessor_type = Accessor_type(js["type"])
 
         self.max: List[float] = []
         if (js and "max" in js):
@@ -197,10 +197,10 @@ class AnimationChannelTarget:
         if (js and "node" in js):
             self.node: int = js["node"]
 
-        self.path: Optional[AnimationChannelTarget_path] = None
+        self.path: AnimationChannelTarget_path = None
         """The name of the node's TRS property to modify, or the "weights" of the Morph Targets it instantiates. For the "translation" property, the values that are provided by the sampler are the translation along the x, y, and z axes. For the "rotation" property, the values are a quaternion in the order (x, y, z, w), where w is the scalar. For the "scale" property, the values are the scaling factors along the x, y, and z axes."""
         if (js and "path" in js):
-            self.path: Optional[AnimationChannelTarget_path] = AnimationChannelTarget_path(js["path"])
+            self.path: AnimationChannelTarget_path = AnimationChannelTarget_path(js["path"])
 
 class AnimationChannel:
     """Targets an animation's sampler at a node's property."""
@@ -397,10 +397,10 @@ class BufferView:
         if (js and "byteStride" in js):
             self.byteStride: int = js["byteStride"]
 
-        self.target: Optional[BufferView_target] = None
+        self.target: BufferView_target = None
         """The target that the GPU buffer should be bound to."""
         if (js and "target" in js):
-            self.target: Optional[BufferView_target] = BufferView_target(js["target"])
+            self.target: BufferView_target = BufferView_target(js["target"])
 
 class CameraOrthographic:
     """An orthographic camera containing properties to create an orthographic projection matrix."""
@@ -504,10 +504,10 @@ class Camera:
         if (js and "perspective" in js):
             self.perspective: CameraPerspective = CameraPerspective(js["perspective"])
 
-        self.type: Optional[Camera_type] = None
+        self.type: Camera_type = None
         """Specifies if the camera uses a perspective or orthographic projection."""
         if (js and "type" in js):
-            self.type: Optional[Camera_type] = Camera_type(js["type"])
+            self.type: Camera_type = Camera_type(js["type"])
 
 class Image_mimeType(Enum):
     """The image's MIME type. Required if `bufferView` is defined."""
@@ -538,10 +538,10 @@ class Image:
         if (js and "uri" in js):
             self.uri: str = js["uri"]
 
-        self.mimeType: Optional[Image_mimeType] = None
+        self.mimeType: Image_mimeType = None
         """The image's MIME type. Required if `bufferView` is defined."""
         if (js and "mimeType" in js):
-            self.mimeType: Optional[Image_mimeType] = Image_mimeType(js["mimeType"])
+            self.mimeType: Image_mimeType = Image_mimeType(js["mimeType"])
 
         self.bufferView: int = -1
         """The index of the bufferView that contains the image. Use this instead of the image's uri property."""
@@ -912,15 +912,15 @@ class Sampler:
         if (js and "name" in js):
             self.name: str = js["name"]
 
-        self.magFilter: Optional[Sampler_magFilter] = None
+        self.magFilter: Sampler_magFilter = None
         """Magnification filter."""
         if (js and "magFilter" in js):
-            self.magFilter: Optional[Sampler_magFilter] = Sampler_magFilter(js["magFilter"])
+            self.magFilter: Sampler_magFilter = Sampler_magFilter(js["magFilter"])
 
-        self.minFilter: Optional[Sampler_minFilter] = None
+        self.minFilter: Sampler_minFilter = None
         """Minification filter."""
         if (js and "minFilter" in js):
-            self.minFilter: Optional[Sampler_minFilter] = Sampler_minFilter(js["minFilter"])
+            self.minFilter: Sampler_minFilter = Sampler_minFilter(js["minFilter"])
 
         self.wrapS: Sampler_wrapS = Sampler_wrapS(10497)
         """s wrapping mode."""

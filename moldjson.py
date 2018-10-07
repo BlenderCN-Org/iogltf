@@ -223,7 +223,7 @@ class JsonSchema:
                 else:
                     return f'{enum_name}', f'{enum_name}({self.default})', f'{enum_name}(%s)'
             else:
-                return f'Optional[{enum_name}]', 'None', f'{enum_name}(%s)'
+                return f'{enum_name}', 'None', f'{enum_name}(%s)'
 
         raise Exception('unknown type: ' + self.title)
 
