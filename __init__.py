@@ -43,7 +43,7 @@ class ImportGLTF(bpy.types.Operator, ImportHelper):
     bl_options = {'REGISTER', 'UNDO'}
 
     filename_ext = ".gltf"
-    filter_glob: StringProperty(default="*.gltf", options={'HIDDEN'})
+    filter_glob = StringProperty(default="*.gltf", options={'HIDDEN'})
 
     def execute(self, context):
         keywords = self.as_keywords(

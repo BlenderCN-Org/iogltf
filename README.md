@@ -1,19 +1,19 @@
 # iogltf
 GLTF Importer and Exporter for blender-2.8 
 
+## import_gltf.py
+
+## blender_groupnode_io.py
+Blender maeterial node serializer that is based on 
+http://blenderaddonlist.blogspot.com/2014/08/addon-node-group-to-python-script-ngr.html
+
+* https://github.com/KhronosGroup/glTF-Sample-Models/tree/master/sourceModels/DamagedHelmet
+
 ## moldjson
-jsonschema utility for python-3.7 typing.
+Jsonschema utility for python-3.7 typing.
 
-### parse
+Generate gltftypes.py
 
-```py
-import moldjson
-import pathlib
-
-# git clone https://github.com/KhronosGroup/glTF.git
-path = pathlib.Path('gltf/specification/2.0/schema/glTF.schema.json')
-
-schema = moldjson.parse_schema(path)
-
-print(schema)
+```
+$ python gltftypes_generator.py
 ```
