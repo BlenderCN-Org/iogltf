@@ -1,8 +1,10 @@
 import bpy
+from logging import getLogger
+logger = getLogger()
+
 
 def debug_print(*args):
     print(*args)
-    pass
 
 
 def export_attrs(input, *excludes):
@@ -11,11 +13,11 @@ def export_attrs(input, *excludes):
 
 def export_node(node):
     obj = {
-            'bl_idname': node.bl_idname,
-            'type': node.type,
-            'attr': export_attrs(node, 'node_tree', 'parent'),
-            'inputs': [export_attrs(ip) for ip in node.inputs],
-            'outputs': [export_attrs(op) for op in node.outputs],
+        'bl_idname': node.bl_idname,
+        'type': node.type,
+        'attr': export_attrs(node, 'node_tree', 'parent'),
+        'inputs': [export_attrs(ip) for ip in node.inputs],
+        'outputs': [export_attrs(op) for op in node.outputs],
     }
     if node.type == 'GROUP':
         obj['GROUP_NAME'] = node.node_tree.name
@@ -53,15 +55,16 @@ def to_val(val):
     else:
         return list(val)
 
+
 def export_group(grp):
     return {
-            'name': grp.node_tree.name,
-            'bl_idname': grp.node_tree.bl_idname,
-            'nodes': [export_node(node) for node in grp.node_tree.nodes],
-            'links': [export_link(list(grp.node_tree.nodes), link) for link in grp.node_tree.links],
-            'tree_attr': export_attrs(grp.node_tree, 'active_output', 'active_input', 'use_fake_user'),
-            'inputs': [export_attrs(ip) for ip in grp.node_tree.inputs],
-            'outputs': [export_attrs(op) for op in grp.node_tree.outputs],
+        'name': grp.node_tree.name,
+        'bl_idname': grp.node_tree.bl_idname,
+        'nodes': [export_node(node) for node in grp.node_tree.nodes],
+        'links': [export_link(list(grp.node_tree.nodes), link) for link in grp.node_tree.links],
+        'tree_attr': export_attrs(grp.node_tree, 'active_output', 'active_input', 'use_fake_user'),
+        'inputs': [export_attrs(ip) for ip in grp.node_tree.inputs],
+        'outputs': [export_attrs(op) for op in grp.node_tree.outputs],
     }
 
 
@@ -71,61 +74,43 @@ def export_groups(node_groups):
 
 def import_g(inputs, n):
     for x in inputs:
-        print(x)
+        logger.debug(str(x))
         inputs.remove(x)
-    debug_print('group', inputs, len(inputs), len(n))
+    logger.debug('group: %s: %d %d' ,inputs, len(inputs), len(n))
     for src in n:
-        debug_print('in', src)
+        logger.debug('in %s', src)
         if 'bl_socket_idname' in src:
             t = src['bl_socket_idname']
         elif 'bl_idname' in src:
             t = src['bl_idname']
         dst = inputs.new(name=src['name'], type=t)
-        #if t!='NodeSocketVirtual' and 'NodeSocketVirtual' in str(dst):
+        # if t!='NodeSocketVirtual' and 'NodeSocketVirtual' in str(dst):
         #    raise Exception('NodeSocketVirtual')
-        #if dst.bl_idname!=src['bl_idname']:
+        # if dst.bl_idname!=src['bl_idname']:
         #    raise Exception('different bl_idname: ' + dst.bl_idname)
         for k, v in src.items():
-            if k=='name' or k=='bl_idname':
+            if k == 'name' or k == 'bl_idname':
                 continue
-            debug_print('    ', inputs, dst, k, v)
+            logger.debug('    %s %s %s %s', inputs, dst, k, v)
             setattr(dst, k, v)
 
-'''
-def import_output(outputs, n):
-    for x in outputs:
-        print('remove', x)
-        outputs.remove(x)
-    debug_print('out', outputs, len(outputs), len(n))
-    for src in n:
-        debug_print('out', src)
-        dst = outputs.new(name=src['name'], type=src['bl_idname'])
-        if src['bl_idname']!='NodeSocketVirtual' and 'NodeSocketVirtual' in str(dst):
-            raise Exception('NodeSocketVirtual')
-        if dst.bl_idname!=src['bl_idname']:
-            raise Exception('different bl_idname: ' + dst.bl_idname)
-        for k, v in src.items():
-            if k=='name' or k=='bl_idname':
-                continue
-            debug_print('    ', outputs, dst, k, v)
-            setattr(dst, k, v)
-'''
 
 def import_inout(node, n):
-    debug_print('inout', node)
-    if len(node.inputs)!=len(n['inputs']):
-            raise Exception()
+    logger.debug('inout %s', node)
+    if len(node.inputs) != len(n['inputs']):
+        raise Exception()
     for dst, src in zip(node.inputs, n['inputs']):
         for k, v in src.items():
-            #debug_print('    ', node, dst, k, v)
+            #logger.debug('    ', node, dst, k, v)
             setattr(dst, k, v)
 
-    if len(node.outputs)!=len(n['outputs']):
-            raise Exception()
+    if len(node.outputs) != len(n['outputs']):
+        raise Exception()
     for dst, src in zip(node.outputs, n['outputs']):
         for k, v in src.items():
-            #debug_print('    ', node, dst, k, v)
+            #logger.debug('    ', node, dst, k, v)
             setattr(dst, k, v)
+
 
 def import_groups(src):
     groups = {}
@@ -133,26 +118,26 @@ def import_groups(src):
         #
         # group
         #
-        if g['bl_idname']!='ShaderNodeTree':
+        if g['bl_idname'] != 'ShaderNodeTree':
             raise Exception('not ShaderNodeTree')
         group = bpy.data.node_groups.new(g['name'], g['bl_idname'])
-        print(group)
+        logger.debug('%s', group)
 
         group.use_fake_user = True
         groups[g['name']] = group
 
-        print('## tree_attr')
+        logger.debug('## tree_attr')
         for k, v in g['tree_attr'].items():
-            if k=='name' or k=='bl_idname':
+            if k == 'name' or k == 'bl_idname':
                 continue
-            print(group, k, v)
+            logger.debug('%s %s %s', group, k, v)
             setattr(group, k, v)
 
-        print('## tree in out')
+        logger.debug('## tree in out')
         import_g(group.inputs, g['inputs'])
         import_g(group.outputs, g['outputs'])
 
-        print('## nodes')
+        logger.debug('## nodes')
         nodes = []
         for n in g['nodes']:
             node = group.nodes.new(n['bl_idname'])
@@ -165,14 +150,13 @@ def import_groups(src):
             for k, v in n['attr'].items():
                 setattr(node, k, v)
 
-
-        print('## links: %d' % len(nodes))
+        logger.debug('## links: %d', len(nodes))
         for l in g['links']:
-            print(l)
+            logger.debug('%s', l)
             from_node = nodes[l['from_node']]
-            print(from_node, len(from_node.inputs), len(from_node.outputs))
+            logger.debug('%s %d %d', from_node, len(from_node.inputs), len(from_node.outputs))
             to_node = nodes[l['to_node']]
-            print(to_node, len(to_node.inputs), len(to_node.outputs))
+            logger.debug('%s %d %d', to_node, len(to_node.inputs), len(to_node.outputs))
             from_socket = from_node.outputs[l['from_socket']]
             to_socket = to_node.inputs[l['to_socket']]
             group.links.new(from_socket, to_socket, verify_limits=False)
@@ -180,7 +164,7 @@ def import_groups(src):
 
 
 if __name__ == '__main__':
-    print('####')
+    logger.debug('####')
     size = 0.0
     main_area = None
     for area in bpy.context.screen.areas:
@@ -211,8 +195,7 @@ if __name__ == '__main__':
 
     import_groups(exported)
 
-    #print(repr(exported))
+    # print(repr(exported))
 
     #import json
     #print(json.dumps(exported, indent=2))
-

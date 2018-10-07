@@ -11,6 +11,11 @@ from . import gltftypes
 from . import gltfnode
 from . import group_io
 
+
+from logging import getLogger, CRITICAL, DEBUG  # pylint: disable=C0411
+logger = getLogger(__name__)
+
+
 class Float2(ctypes.Structure):
     _pack_ = 1
     _fields_ = [
@@ -105,67 +110,85 @@ def get_indices(base: pathlib.Path, gltf: gltftypes.glTF, accessor_index: int):
         return (ctypes.c_uint * accessor.count).from_buffer_copy(segment)
 
 
-class Submesh:
-    def __init__(self, path: pathlib.Path, gltf: gltftypes.glTF, prim: gltftypes.MeshPrimitive)->None:
-        pos_index = prim.attributes['POSITION']
-        self.pos = get_array(path, gltf, pos_index, Float3)
-
-        self.nom = None
-        if 'NORMAL' in prim.attributes:
-            nom_index = prim.attributes['NORMAL']
-            self.nom = get_array(path, gltf, nom_index, Float3)
-            if len(self.nom) != len(self.pos):
-                raise Exception('nom len is not equals to pos')
-
-        self.um = None
-        if 'TEXCOORD_0' in prim.attributes:
-            uv_index = prim.attributes['TEXCOORD_0']
-            self.uv = get_array(path, gltf, uv_index, Float2)
-            if len(self.uv) != len(self.pos):
-                raise Exception('uv len is not equals to pos')
-
-        self.indices = get_indices(path, gltf, prim.indices)
-
-
 class VertexBuffer:
     def __init__(self, path: pathlib.Path, gltf: gltftypes.glTF, mesh: gltftypes.Mesh)->None:
-        submeshes = [Submesh(path, gltf, prim) for prim in mesh.primitives]
+        # check shared attributes
+        attributes = {}
+        shared = True
+        for prim in mesh.primitives:
+            print(prim.attributes)
+            if not attributes:
+                attributes = prim.attributes
+            else:
+                if attributes != prim.attributes:
+                    shared = False
+                    break
+        print(shared)
+
+        #submeshes = [Submesh(path, gltf, prim) for prim in mesh.primitives]
 
         # merge submesh
-        pos_count = sum((len(x.pos) for x in submeshes), 0)
+        def position_count(prim):
+            accessor_index = prim.attributes['POSITION']
+            return gltf.accessors[accessor_index].count
+        pos_count = sum((position_count(prim) for prim in mesh.primitives), 0)
         self.pos = (ctypes.c_float * (pos_count * 3))()
         self.nom = (ctypes.c_float * (pos_count * 3))()
         self.uv = (Float2 * (pos_count))()
 
-        index_count = sum((len(x.indices) for x in submeshes), 0)
+        def index_count(prim):
+            return gltf.accessors[prim.indices].count
+        index_count = sum((index_count(prim) for prim in mesh.primitives), 0)
         self.indices = (ctypes.c_int * index_count)()
 
         pos_index = 0
         nom_index = 0
         uv_index = 0
-        index = 0
-        for submesh in submeshes:
-            for v in submesh.pos:
-                self.pos[pos_index] = v.x
-                pos_index += 1
-                self.pos[pos_index] = -v.z
-                pos_index += 1
-                self.pos[pos_index] = v.y
-                pos_index += 1
-            for n in submesh.nom:
-                self.nom[nom_index] = n.x
-                nom_index += 1
-                self.nom[nom_index] = -n.z
-                nom_index += 1
-                self.nom[nom_index] = n.y
-                nom_index += 1
-            for uv in submesh.uv:
-                self.uv[uv_index].x = uv.x
-                self.uv[uv_index].y = 2-uv.y
-                uv_index += 1
-            for i in submesh.indices:
-                self.indices[index] = i
-                index += 1
+        indices_index = 0
+        offset = 0
+        for prim in mesh.primitives:
+            #
+            # attributes
+            #
+            pos = get_array(path, gltf, prim.attributes['POSITION'], Float3)
+            if 'NORMAL' in prim.attributes:
+                nom = get_array(path, gltf, prim.attributes['NORMAL'], Float3)
+                if len(nom) != len(pos):
+                    raise Exception("len(nom) different from len(pos)")
+            if 'TEXCOORD_0' in prim.attributes:
+                uv = get_array(path, gltf, prim.attributes['TEXCOORD_0'], Float2)
+                if len(uv) != len(pos):
+                    raise Exception("len(uv) different from len(pos)")
+            for i in range(len(pos)):
+                self.pos[pos_index] = pos[i].x
+                pos_index+=1
+                self.pos[pos_index] = -pos[i].z
+                pos_index+=1
+                self.pos[pos_index] = pos[i].y
+                pos_index+=1
+
+                if nom:
+                    self.nom[nom_index] = nom[i].x
+                    nom_index+=1
+                    self.nom[nom_index] = -nom[i].z
+                    nom_index+=1
+                    self.nom[nom_index] = nom[i].y
+                    nom_index+=1
+
+                if uv:
+                    xy = uv[i]
+                    xy.y = 1.0 - xy.y
+                    self.uv[uv_index] = xy
+                    uv_index+=1
+
+            #
+            # indices
+            #
+            indices = get_indices(path, gltf, prim.indices)
+            for i in indices:
+                self.indices[indices_index] = offset + i
+                indices_index += 1
+            offset += len(pos)
 
 
 def load(context, filepath: str, global_matrix)->Set[str]:
@@ -193,8 +216,6 @@ def load(context, filepath: str, global_matrix)->Set[str]:
         progress.step("Done, loading materials:%i..." % len(gltf.materials))
 
         def create_material(material: gltftypes.Material):
-            import rna_xml
-
             blender_material = bpy.data.materials.new(material.name)
             blender_material['js'] = json.dumps(material.js, indent=2)
 
@@ -202,11 +223,16 @@ def load(context, filepath: str, global_matrix)->Set[str]:
             tree = blender_material.node_tree
 
             tree.nodes.remove(tree.nodes['Principled BSDF'])
+
+            getLogger('').disabled = True
             groups = group_io.import_groups(gltfnode.groups)
+            getLogger('').disabled = False
+
             bsdf = tree.nodes.new('ShaderNodeGroup')
             bsdf.node_tree = groups['glTF Metallic Roughness']
 
-            tree.links.new(bsdf.outputs['Shader'], tree.nodes['Material Output'].inputs['Surface'])
+            tree.links.new(
+                bsdf.outputs['Shader'], tree.nodes['Material Output'].inputs['Surface'])
 
             def create_image_node(texture_index: int):
                 # uv => tex
