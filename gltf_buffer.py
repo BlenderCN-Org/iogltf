@@ -101,10 +101,10 @@ class Float3(ctypes.Structure):
 class VertexBuffer:
     def __init__(self, path: pathlib.Path, gltf: gltftypes.glTF, mesh: gltftypes.Mesh)->None:
         # check shared attributes
-        attributes = {}
+        attributes: Dict[str, int] = {}
         shared = True
         for prim in mesh.primitives:
-            print(prim.attributes)
+            # print(prim.attributes)
             if not attributes:
                 attributes = prim.attributes
             else:

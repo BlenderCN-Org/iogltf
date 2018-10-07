@@ -17,9 +17,8 @@ if "import_gltf" in locals():
     import importlib
     importlib.reload(import_gltf)
     importlib.reload(gltftypes)
-    importlib.reload(gltf_pbr_node)
-    importlib.reload(blender_groupnode_io)
-from . import import_gltf, gltftypes, gltf_pbr_node, blender_groupnode_io
+    importlib.reload(blender_io)
+from . import import_gltf, gltftypes, blender_io
 
 
 bl_info = {
