@@ -31,7 +31,8 @@ def run():
     #path = here / sample_folder / 'DamagedHelmet/glTF/DamagedHelmet.gltf'
     #path = here / sample_folder / 'BoxAnimated/glTF/BoxAnimated.gltf'
     #path = here / sample_folder / 'Buggy/glTF/Buggy.gltf'
-    path = here / sample_folder / 'CesiumMilkTruck/glTF/CesiumMilkTruck.gltf'
+    #path = here / sample_folder / 'CesiumMilkTruck/glTF/CesiumMilkTruck.gltf'
+    path = here / sample_folder / 'CesiumMan/glTF/CesiumMan.gltf'
 
     if False:
         def mesh_str(mesh):
@@ -46,15 +47,26 @@ def run():
                     with f.open() as r:
                         gltf = gltftypes.from_json(json.load(r))
                         print(f, [mesh_str(mesh) for mesh in gltf.meshes])
-        return
+    elif False:
+        for root, dirs, files in os.walk(here / sample_folder):
+            root = pathlib.Path(root)
+            for f in files:
+                f = root / f
+                if f.suffix == '.gltf':
+                    import gltftypes
+                    with f.open() as r:
+                        gltf = gltftypes.from_json(json.load(r))
+                        print(f, len(gltf.skins))
 
-    try:
-        iogltf.unregister()
-    except:
-        pass
-    iogltf.register()
+    else:
 
-    bpy.ops.import_scene.iogltf('EXEC_DEFAULT', filepath=str(path))
+        try:
+            iogltf.unregister()
+        except:
+            pass
+        iogltf.register()
+
+        bpy.ops.import_scene.iogltf('EXEC_DEFAULT', filepath=str(path))
 
 
 run()

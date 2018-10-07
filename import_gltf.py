@@ -9,7 +9,7 @@ from progress_report import ProgressReport  # , ProgressReportSubstep
 from bpy_extras.image_utils import load_image
 
 from . import gltftypes
-from . import gltfnode
+from . import gltf_pbr_node
 from . import group_io
 
 
@@ -226,7 +226,7 @@ def load(context, filepath: str, global_matrix)->Set[str]:
             tree.nodes.remove(tree.nodes['Principled BSDF'])
 
             getLogger('').disabled = True
-            groups = group_io.import_groups(gltfnode.groups)
+            groups = group_io.import_groups(gltf_pbr_node.groups)
             getLogger('').disabled = False
 
             bsdf = tree.nodes.new('ShaderNodeGroup')
@@ -332,7 +332,7 @@ def load(context, filepath: str, global_matrix)->Set[str]:
         def create_object(i: int, node: gltftypes.Node):
             name = node.name
             if not name:
-                name = f'{path.stem}_{i}'
+                name = '_%03d' % i
 
             if node.mesh != -1:
                 blender_object = bpy.data.objects.new(
