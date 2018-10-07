@@ -13,10 +13,10 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "generate.py",
+            "name": "generator",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/generate.py",
+            "program": "${workspaceFolder}/gltftypes_generator.py",
             "console": "integratedTerminal"
         },
         {
