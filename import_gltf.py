@@ -10,7 +10,7 @@ from bpy_extras.image_utils import load_image
 
 from . import gltftypes
 from . import gltf_pbr_node
-from . import group_io
+from . import blender_groupnode_io
 
 
 from logging import getLogger, CRITICAL, DEBUG  # pylint: disable=C0411
@@ -226,7 +226,7 @@ def load(context, filepath: str, global_matrix)->Set[str]:
             tree.nodes.remove(tree.nodes['Principled BSDF'])
 
             getLogger('').disabled = True
-            groups = group_io.import_groups(gltf_pbr_node.groups)
+            groups = blender_groupnode_io.import_groups(gltf_pbr_node.groups)
             getLogger('').disabled = False
 
             bsdf = tree.nodes.new('ShaderNodeGroup')
