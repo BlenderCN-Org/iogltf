@@ -4,6 +4,7 @@ import ctypes
 from typing import Set, Dict
 
 import bpy
+import mathutils
 from progress_report import ProgressReport  # , ProgressReportSubstep
 from bpy_extras.image_utils import load_image
 
@@ -328,15 +329,56 @@ def load(context, filepath: str, global_matrix)->Set[str]:
         progress.step("Done, building objects (object:%i) ..." %
                       (len(gltf.nodes)))
 
-        def create_object(node: gltftypes.Node):
+        def create_object(i: int, node: gltftypes.Node):
+            name = node.name
+            if not name:
+                name = f'{path.stem}_{i}'
+
             if node.mesh != -1:
                 blender_object = bpy.data.objects.new(
-                    node.name, meshes[node.mesh])
+                    name, meshes[node.mesh])
             else:
-                blender_object = bpy.data.objects.new(node.name, None)
+                blender_object = bpy.data.objects.new(name, None)
+
             return blender_object
-        objects = [create_object(node) for node in gltf.nodes]
+
+        objects = [create_object(i, node) for i, node in enumerate(gltf.nodes)]
         print(objects)
+
+        for blender_object, node in zip(objects, gltf.nodes):
+            if node.children:
+                for child in node.children:
+                    objects[child].parent = blender_object
+
+        def mod_v(v):
+            return (v[0], -v[2], v[1])
+        def mod_q(q):
+            return mathutils.Quaternion(mod_v(q.axis), q.angle)
+        for blender_object, node in zip(objects, gltf.nodes):
+            if node.translation:
+                blender_object.location = mod_v(node.translation)
+
+            if node.rotation:
+                r = node.rotation
+                q = mathutils.Quaternion((r[3], r[0], r[1], r[2]))
+                blender_object.rotation_quaternion = mod_q(q)
+
+            if node.scale:
+                s = node.scale
+                blender_object.scale = (s[0], s[2], s[1])
+
+            if node.matrix:
+                m = node.matrix
+                matrix = mathutils.Matrix((
+                    (m[0], m[4], m[8], m[12]),
+                    (m[1], m[5], m[9], m[13]),
+                    (m[2], m[6], m[10], m[14]),
+                    (m[3], m[7], m[11], m[15])
+                ))
+                t, q, s = matrix.decompose()
+                blender_object.location = mod_v(t)
+                blender_object.rotation_quaternion = mod_q(q)
+                blender_object.scale = (s[0], s[2], s[1])
 
         view_layer = context.view_layer
         if view_layer.collections.active:
@@ -351,7 +393,7 @@ def load(context, filepath: str, global_matrix)->Set[str]:
             obj.select_set('SELECT')
 
             # we could apply this anywhere before scaling.
-            obj.matrix_world = global_matrix
+            #obj.matrix_world = global_matrix
 
         context.scene.update()
 
