@@ -29,20 +29,7 @@ def load(context, filepath: str,
 
         meshes = blender_io.load_meshes(progress, base_dir, materials, gltf)
 
-        objects = blender_io.load_objects(progress, meshes, gltf)
-
-        # link objects to scene
-        view_layer = context.view_layer
-        if view_layer.collections.active:
-            collection = view_layer.collections.active.collection
-        else:
-            collection = context.scene.master_collection.new()
-            view_layer.collections.link(collection)
-        for obj in objects:
-            collection.objects.link(obj)
-            obj.select_set('SELECT')
-            # we could apply this anywhere before scaling.
-            #obj.matrix_world = global_matrix
+        _objects = blender_io.load_objects(context, progress, meshes, gltf)
 
         context.scene.update()
 

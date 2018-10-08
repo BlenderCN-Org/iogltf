@@ -18,7 +18,9 @@ if "import_gltf" in locals():
     importlib.reload(import_gltf)  # pylint: disable=E0601
     importlib.reload(gltftypes)  # pylint: disable=E0601
     importlib.reload(blender_io)  # pylint: disable=E0601
-from . import import_gltf, gltftypes, blender_io # pylint: disable=C0413
+    importlib.reload(node_io)  # pylint: disable=E0601
+from . import import_gltf, gltftypes, blender_io  # pylint: disable=C0413
+from .blender_io import node_io  # pylint: disable=C0413
 
 
 bl_info = {
