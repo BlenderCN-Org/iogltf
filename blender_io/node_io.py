@@ -1,4 +1,5 @@
 from typing import Optional, List, Any, Generator
+import json
 
 import bpy
 import mathutils  # pylint: disable=E0401
@@ -66,7 +67,7 @@ def load_objects(context, progress: ProgressReport,
     progress.step()
 
     def mod_v(v):
-        return (v[0], -v[2], v[1])
+        return (v[0], v[1], v[2])
 
     def mod_q(q):
         return mathutils.Quaternion(mod_v(q.axis), q.angle)
@@ -82,9 +83,14 @@ def load_objects(context, progress: ProgressReport,
             node.blender_object = bpy.data.objects.new(
                 name, meshes[node.gltf_node.mesh])
         else:
+            # empty
             node.blender_object = bpy.data.objects.new(name, None)
+            node.blender_object.empty_display_size = 0.1
+            #node.blender_object.empty_draw_type = 'PLAIN_AXES'
         collection.objects.link(node.blender_object)
         node.blender_object.select_set("SELECT")
+
+        node.blender_object['js'] = json.dumps(node.gltf_node.js, indent=2)
 
         # parent
         if node.parent:
@@ -96,6 +102,7 @@ def load_objects(context, progress: ProgressReport,
         if node.gltf_node.rotation:
             r = node.gltf_node.rotation
             q = mathutils.Quaternion((r[3], r[0], r[1], r[2]))
+            node.blender_object.rotation_mode = 'QUATERNION'
             node.blender_object.rotation_quaternion = mod_q(q)
 
         if node.gltf_node.scale:
@@ -112,6 +119,7 @@ def load_objects(context, progress: ProgressReport,
             ))
             t, q, s = matrix.decompose()
             node.blender_object.location = mod_v(t)
+            node.blender_object.rotation_mode = 'QUATERNION'
             node.blender_object.rotation_quaternion = mod_q(q)
             node.blender_object.scale = (s[0], s[2], s[1])
 
@@ -154,7 +162,15 @@ def load_objects(context, progress: ProgressReport,
         node.blender_bone = armature.edit_bones.new(node_name)
         if parent_bone:
             node.blender_bone.parent = parent_bone
-        node.blender_bone.head = (0, 0, 1)
+            node.blender_bone.use_connect = True
+            node.blender_bone.head = node.blender_object.matrix_world.to_translation() - node.parent.blender_object.matrix_world.to_translation()
+        else:
+            node.blender_bone.head = node.blender_object.matrix_world.to_translation()
+
+        if node.children:
+            node.blender_bone.tail = node.children[0].blender_object.matrix_world.to_translation() - node.blender_object.matrix_world.to_translation()
+        elif node.parent and node.parent.blender_bone:
+            node.blender_bone.tail = node.parent.blender_bone.tail
 
     for node in nodes[0].traverse():
         create_armature(node)

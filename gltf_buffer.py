@@ -157,17 +157,17 @@ class VertexBuffer:
             for i, _ in enumerate(pos):
                 self.pos[pos_index] = pos[i].x
                 pos_index += 1
-                self.pos[pos_index] = -pos[i].z
-                pos_index += 1
                 self.pos[pos_index] = pos[i].y
+                pos_index += 1
+                self.pos[pos_index] = pos[i].z
                 pos_index += 1
 
                 if nom:
                     self.nom[nom_index] = nom[i].x
                     nom_index += 1
-                    self.nom[nom_index] = -nom[i].z
-                    nom_index += 1
                     self.nom[nom_index] = nom[i].y
+                    nom_index += 1
+                    self.nom[nom_index] = nom[i].z
                     nom_index += 1
 
                 if uv:
