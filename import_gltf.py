@@ -29,7 +29,7 @@ def load(context, filepath: str,
 
         meshes = blender_io.load_meshes(progress, base_dir, materials, gltf)
 
-        _objects = blender_io.load_objects(context, progress, meshes, gltf)
+        _objects = blender_io.load_objects(context, progress, base_dir, meshes, gltf)
 
         context.scene.update()
 

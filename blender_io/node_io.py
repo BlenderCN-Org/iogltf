@@ -1,26 +1,73 @@
-from typing import Optional, List, Any, Generator
+from typing import Optional, List, Any, Generator, Tuple
 import json
+import pathlib
+import ctypes
 
 import bpy
 import mathutils  # pylint: disable=E0401
 from progress_report import ProgressReport
 
-from .. import gltftypes
+from .. import gltftypes, gltf_buffer
+
+
+class Mat16(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [
+        ("f00", ctypes.c_float),
+        ("f01", ctypes.c_float),
+        ("f02", ctypes.c_float),
+        ("f03", ctypes.c_float),
+        ("f10", ctypes.c_float),
+        ("f11", ctypes.c_float),
+        ("f12", ctypes.c_float),
+        ("f13", ctypes.c_float),
+        ("f20", ctypes.c_float),
+        ("f21", ctypes.c_float),
+        ("f22", ctypes.c_float),
+        ("f23", ctypes.c_float),
+        ("f30", ctypes.c_float),
+        ("f31", ctypes.c_float),
+        ("f32", ctypes.c_float),
+        ("f33", ctypes.c_float),
+    ]
+
+
+class Skin:
+    def __init__(self, base_dir: pathlib.Path, gltf: gltftypes.glTF, skin: gltftypes.Skin)->None:
+        self.base_dir = base_dir
+        self.gltf = gltf
+        self.skin = skin
+        self.inverse_matrices: Any = None
+
+    def get_matrix(self, joint: int)->Any:
+        if not self.inverse_matrices:
+            self.inverse_matrices = gltf_buffer.get_array(
+                self.base_dir, self.gltf, self.skin.inverseBindMatrices, Mat16)
+        m = self.inverse_matrices[joint]
+        mat = mathutils.Matrix((
+            (m.f00, m.f10, m.f20, m.f30),
+            (m.f01, m.f11, m.f21, m.f31),
+            (m.f02, m.f12, m.f22, m.f32),
+            (m.f03, m.f13, m.f23, m.f33)
+        ))
+        #d = mat.decompose()
+        return mat
 
 
 class Node:
-    def __init__(self, index: int, gltf_node: gltftypes.Node, skins: List[gltftypes.Skin])->None:
+    def __init__(self, index: int, gltf_node: gltftypes.Node, skins: List[Tuple[Skin, int]])->None:
         self.index = index
         self.gltf_node = gltf_node
         self.parent: Optional[Node] = None
         self.children: List[Node] = []
         self.blender_object: Any = None
 
-        self.skin: Optional[gltftypes.Skin] = None
+        self.skin: Optional[Skin] = None
         if len(skins) > 1:
             raise Exception('Multiple skin')
         elif len(skins) == 1:
-            self.skin = skins[0]
+            self.skin = skins[0][0]
+            self.skin_joint = skins[0][1]
         self.blender_armature: Any = None
         self.blender_bone: Any = None
 
@@ -98,10 +145,6 @@ class Node:
             if not node_name:
                 node_name = '_%03d' % self.index
 
-            skin_name = skin.name
-            if skin_name:
-                skin_name = 'armature' + node_name
-
             if self.parent and self.parent.skin == skin:
                 parent_bone = self.parent.blender_bone
                 armature = self.parent.blender_armature.data
@@ -109,6 +152,10 @@ class Node:
             else:
                 parent_bone = None
                 # new armature
+                skin_name = skin.skin.name
+                if skin_name:
+                    skin_name = 'armature' + node_name
+
                 armature = bpy.data.armatures.new(skin_name)
                 self.blender_armature = bpy.data.objects.new(
                     skin_name, armature)
@@ -127,7 +174,10 @@ class Node:
                 self.blender_bone.parent = parent_bone
                 self.blender_bone.use_connect = True
                 #parent_position = parent_blender_object.matrix_world.to_translation()
-            self.blender_bone.head = blender_object.matrix_world.to_translation()
+            object_pos = blender_object.matrix_world.to_translation()
+            #skin_pos = skin.get_matrix(self.skin_joint).inverted().to_translation()
+            #print(object_pos, skin_pos)
+            self.blender_bone.head = object_pos
             if not self.children:
                 self.blender_bone.tail = self.blender_bone.head + \
                     (self.blender_bone.head - self.parent.blender_bone.head)
@@ -142,9 +192,10 @@ class Node:
             if parent_bone:
                 parent_head = parent_bone.head
             parent_dir = (self.blender_bone.head - parent_head).normalized()
-            child_dir = (child_pos - blender_object.matrix_world.to_translation()).normalized()
+            child_dir = (
+                child_pos - blender_object.matrix_world.to_translation()).normalized()
             dot = parent_dir.dot(child_dir)
-            print(parent_dir, child_dir, dot)
+            #print(parent_dir, child_dir, dot)
             return dot > 0.8
 
         for child in self.children:
@@ -153,6 +204,7 @@ class Node:
 
 
 def load_objects(context, progress: ProgressReport,
+                 base_dir: pathlib.Path,
                  meshes: List[Any], gltf: gltftypes.glTF)->List[Any]:
     progress.enter_substeps(len(gltf.nodes)+1, "Loading objects...")
 
@@ -165,11 +217,14 @@ def load_objects(context, progress: ProgressReport,
         view_layer.collections.link(collection)
 
     # setup
-    def get_skins(i: int)->Generator[gltftypes.Skin, None, None]:
-        for skin in gltf.skins:
-            for joint in skin.joints:
+    skins = [Skin(base_dir, gltf, skin) for skin in gltf.skins]
+
+    def get_skins(i: int)->Generator[Tuple[Skin, int], None, None]:
+        for skin in skins:
+            for j, joint in enumerate(skin.skin.joints):
                 if joint == i:
-                    yield skin
+                    yield skin, j
+                    break
     nodes = [Node(i, gltf_node, [skin for skin in get_skins(i)])
              for i, gltf_node in enumerate(gltf.nodes)]
 
