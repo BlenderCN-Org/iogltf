@@ -131,18 +131,25 @@ def load_objects(context, progress: ProgressReport,
     def create_armature(node: Node):
         if not node.skin:
             return
+        skin = node.skin
+
+        if not node.blender_object:
+            return
+        blender_object = node.blender_object
+
+        parent_blender_object = node.parent.blender_object if node.parent else None
 
         node_name = node.gltf_node.name
         if not node_name:
             node_name = '_%03d' % node.index
 
-        skin_name = node.skin.name
+        skin_name = skin.name
         if skin_name:
             skin_name = 'armature' + node_name
 
         armature = None
         parent_bone = None
-        if node.parent and node.parent.skin == node.skin:
+        if node.parent and node.parent.skin == skin:
             armature = node.parent.blender_armature.data
             node.blender_armature = node.parent.blender_armature
             parent_bone = node.parent.blender_bone
@@ -160,17 +167,14 @@ def load_objects(context, progress: ProgressReport,
 
         # create bone
         node.blender_bone = armature.edit_bones.new(node_name)
+        #parent_position = mathutils.Vector((0, 0, 0))
         if parent_bone:
             node.blender_bone.parent = parent_bone
             node.blender_bone.use_connect = True
-            node.blender_bone.head = node.blender_object.matrix_world.to_translation() - node.parent.blender_object.matrix_world.to_translation()
-        else:
-            node.blender_bone.head = node.blender_object.matrix_world.to_translation()
-
-        if node.children:
-            node.blender_bone.tail = node.children[0].blender_object.matrix_world.to_translation() - node.blender_object.matrix_world.to_translation()
-        elif node.parent and node.parent.blender_bone:
-            node.blender_bone.tail = node.parent.blender_bone.tail
+            #parent_position = parent_blender_object.matrix_world.to_translation()
+        node.blender_bone.head = blender_object.matrix_world.to_translation()
+        if not node.children:
+            node.blender_bone.tail = node.blender_bone.head + (node.blender_bone.head - node.parent.blender_bone.head)
 
     for node in nodes[0].traverse():
         create_armature(node)
