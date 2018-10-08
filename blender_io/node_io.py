@@ -33,7 +33,6 @@ class Mat16(ctypes.Structure):
     ]
 
 
-
 @contextmanager
 def tmp_mode(obj, tmp: str):
     mode = obj.rotation_mode
@@ -62,45 +61,36 @@ class Skin:
             (m.f02, m.f12, m.f22, m.f32),
             (m.f03, m.f13, m.f23, m.f33)
         ))
-        #d = mat.decompose()
+        # d = mat.decompose()
         return mat
 
 
 class Node:
-    def __init__(self, index: int, gltf_node: gltftypes.Node, skins: List[Tuple[Skin, int]])->None:
+    def __init__(self, index: int, gltf_node: gltftypes.Node)->None:
         self.index = index
         self.gltf_node = gltf_node
         self.parent: Optional[Node] = None
         self.children: List[Node] = []
-        self.blender_object: Any = None
+        self.blender_object: bpy.types.Object = None
 
-        self.skin: Optional[Skin] = None
-        if len(skins) > 1:
-            raise Exception('Multiple skin')
-        elif len(skins) == 1:
-            self.skin = skins[0][0]
-            self.skin_joint = skins[0][1]
-        self.blender_armature: Any = None
-        self.blender_bone: Any = None
+        self.name = self.gltf_node.name
+        if not self.name:
+            self.name = '_%03d' % self.index
 
     def __str__(self)->str:
         return f'{self.index}'
 
     def create_object(self, progress: ProgressReport,
                       collection, meshes: List[Any], mod_v, mod_q)->None:
-        name = self.gltf_node.name
-        if not name:
-            name = '_%03d' % self.index
-
         # create object
         if self.gltf_node.mesh != -1:
             self.blender_object = bpy.data.objects.new(
-                name, meshes[self.gltf_node.mesh])
+                self.name, meshes[self.gltf_node.mesh])
         else:
             # empty
-            self.blender_object = bpy.data.objects.new(name, None)
+            self.blender_object = bpy.data.objects.new(self.name, None)
             self.blender_object.empty_display_size = 0.1
-            #self.blender_object.empty_draw_type = 'PLAIN_AXES'
+            # self.blender_object.empty_draw_type = 'PLAIN_AXES'
         collection.objects.link(self.blender_object)
         self.blender_object.select_set("SELECT")
 
@@ -143,86 +133,75 @@ class Node:
             child.create_object(progress, collection, meshes, mod_v, mod_q)
 
     # create armature
-    def create_armature(self, context, collection, view_layer, is_connect: bool)->None:
-        if self.skin:
-            skin = self.skin
+    def create_armature(self, context, collection, view_layer,
+                        skin: gltftypes.Skin)->bpy.types.Object:
+        skin_name = skin.name
+        if skin_name:
+            skin_name = 'armature' + self.name
 
-            if not self.blender_object:
-                return
-            blender_object = self.blender_object
+        armature = bpy.data.armatures.new(skin_name)
+        blender_armature = bpy.data.objects.new(
+            skin_name, armature)
+        collection.objects.link(blender_armature)
+        blender_armature.show_in_front = True
+        blender_armature.parent = self.blender_object.parent
 
-            #parent_blender_object = node.parent.blender_object if node.parent else None
+        # select
+        blender_armature.select_set("SELECT")
+        view_layer.objects.active = blender_armature
+        bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
-            node_name = self.gltf_node.name
-            if not node_name:
-                node_name = '_%03d' % self.index
+        # set identity matrix_world to armature
+        m = mathutils.Matrix()
+        m.identity()
+        blender_armature.matrix_world = m
+        context.scene.update()  # recalc matrix_world
 
-            if self.parent and self.parent.skin == skin:
-                parent_bone = self.parent.blender_bone
-                armature = self.parent.blender_armature.data
-                self.blender_armature = self.parent.blender_armature
-            else:
-                parent_bone = None
-                # new armature
-                skin_name = skin.skin.name
-                if skin_name:
-                    skin_name = 'armature' + node_name
+        # edit mode
+        bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
-                armature = bpy.data.armatures.new(skin_name)
-                self.blender_armature = bpy.data.objects.new(
-                    skin_name, armature)
-                collection.objects.link(self.blender_armature)
-                self.blender_armature.show_in_front = True
-                self.blender_armature.parent = self.blender_object.parent
+        self.create_bone(skin, armature, None, False)
 
-                # select and edit mode
-                self.blender_armature.select_set("SELECT")
-                view_layer.objects.active = self.blender_armature
-                bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+        return blender_armature
 
-                m = mathutils.Matrix()
-                m.identity()
-                self.blender_armature.matrix_world = m
-                context.scene.update()
+    def create_bone(self, skin: gltftypes.Skin, armature: bpy.types.Armature,
+                    parent_bone: bpy.types.Bone, is_connect: bool)->None:
 
-                bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+        blender_bone = armature.edit_bones.new(self.name)
+        blender_bone.use_connect = is_connect
+        blender_bone.parent = parent_bone
 
-            # create bone
-            self.blender_bone = armature.edit_bones.new(node_name)
-            self.blender_bone.use_connect = is_connect
-            self.blender_bone.parent = parent_bone
+        object_pos = self.blender_object.matrix_world.to_translation()
+        blender_bone.head = object_pos
 
-            object_pos = blender_object.matrix_world.to_translation()
-            #skin_pos = skin.get_matrix(self.skin_joint).inverted().to_translation()
-            #print(object_pos, skin_pos)
-            self.blender_bone.head = object_pos
-            if not self.children:
-                self.blender_bone.tail = self.blender_bone.head + \
-                    (self.blender_bone.head - self.parent.blender_bone.head)
-
-        def child_is_connect(child_pos)->bool:
-            if not self.skin:
-                return False
-            if len(self.children) == 1:
-                return True
-
-            parent_head = mathutils.Vector((0, 0, 0))
+        if not self.children:
             if parent_bone:
-                parent_head = parent_bone.head
-            parent_dir = (self.blender_bone.head - parent_head).normalized()
-            child_dir = (
-                child_pos - blender_object.matrix_world.to_translation()).normalized()
-            dot = parent_dir.dot(child_dir)
-            #print(parent_dir, child_dir, dot)
-            return dot > 0.8
+                blender_bone.tail = blender_bone.head + \
+                    (blender_bone.head - parent_bone.head)
+        else:
+            def get_child_is_connect(child_pos)->bool:
+                if len(self.children) == 1:
+                    return True
 
-        for child in self.children:
-            child.create_armature(context, collection, view_layer, child_is_connect(
-                child.blender_object.matrix_world.to_translation()))
+                parent_head = mathutils.Vector((0, 0, 0))
+                if parent_bone:
+                    parent_head = parent_bone.head
+                parent_dir = (blender_bone.head -
+                              parent_head).normalized()
+                child_dir = (
+                    child_pos - self.blender_object.matrix_world.to_translation()).normalized()
+                dot = parent_dir.dot(child_dir)
+                # print(parent_dir, child_dir, dot)
+                return dot > 0.8
+
+            for child in self.children:
+                child_is_connect = get_child_is_connect(
+                    child.blender_object.matrix_world.to_translation())
+                child.create_bone(
+                    skin, armature, blender_bone, child_is_connect)
 
 
 def load_objects(context, progress: ProgressReport,
-                 base_dir: pathlib.Path,
                  meshes: List[Any], gltf: gltftypes.glTF)->List[Any]:
     progress.enter_substeps(len(gltf.nodes)+1, "Loading objects...")
 
@@ -235,16 +214,7 @@ def load_objects(context, progress: ProgressReport,
         view_layer.collections.link(collection)
 
     # setup
-    skins = [Skin(base_dir, gltf, skin) for skin in gltf.skins]
-
-    def get_skins(i: int)->Generator[Tuple[Skin, int], None, None]:
-        for skin in skins:
-            for j, joint in enumerate(skin.skin.joints):
-                if joint == i:
-                    yield skin, j
-                    break
-    nodes = [Node(i, gltf_node, [skin for skin in get_skins(i)])
-             for i, gltf_node in enumerate(gltf.nodes)]
+    nodes = [Node(i, gltf_node) for i, gltf_node in enumerate(gltf.nodes)]
 
     # set parents
     for gltf_node, node in zip(gltf.nodes, nodes):
@@ -267,8 +237,12 @@ def load_objects(context, progress: ProgressReport,
         return q
     nodes[0].create_object(progress, collection, meshes, mod_v, mod_q)
 
+    for skin in gltf.skins:
+        nodes[skin.skeleton].create_armature(
+            context, collection, view_layer, skin)
+
     # build armature
-    nodes[0].create_armature(context, collection, view_layer, False)
+    # nodes[0].create_armature(context, collection, view_layer, False)
     bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
     progress.leave_substeps()

@@ -80,11 +80,9 @@ def get_indices(base: pathlib.Path, gltf: gltftypes.glTF, accessor_index: int):
         accessor.byteOffset:accessor.byteOffset+accessor_byte_len]
     if (accessor.componentType == gltftypes.Accessor_componentType.SHORT
             or accessor.componentType == gltftypes.Accessor_componentType.UNSIGNED_SHORT):
-        # type: ignore
-        return (ctypes.c_ushort * accessor.count).from_buffer_copy(segment)
+        return (ctypes.c_ushort * accessor.count).from_buffer_copy(segment) # type: ignore
     elif accessor.componentType == gltftypes.Accessor_componentType.UNSIGNED_INT:
-        # type: ignore
-        return (ctypes.c_uint * accessor.count).from_buffer_copy(segment)
+        return (ctypes.c_uint * accessor.count).from_buffer_copy(segment) # type: ignore
 
 
 class Float2(ctypes.Structure):
@@ -132,8 +130,7 @@ class VertexBuffer:
 
         def index_count(prim: gltftypes.MeshPrimitive)->int:
             return gltf.accessors[prim.indices].count
-        index_count = sum((index_count(prim)
-                           for prim in mesh.primitives), 0)  # type: ignore
+        index_count = sum((index_count(prim) for prim in mesh.primitives), 0)  # type: ignore
         self.indices = (ctypes.c_int * index_count)()  # type: ignore
 
         pos_index = 0
