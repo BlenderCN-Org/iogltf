@@ -84,54 +84,72 @@ class Node:
             child.create_object(progress, collection, meshes, mod_v, mod_q)
 
     # create armature
-    def create_armature(self, collection, view_layer)->None:
-        if not self.skin:
-            return
-        skin = self.skin
+    def create_armature(self, collection, view_layer, is_connect: bool)->None:
+        if self.skin:
+            skin = self.skin
 
-        if not self.blender_object:
-            return
-        blender_object = self.blender_object
+            if not self.blender_object:
+                return
+            blender_object = self.blender_object
 
-        #parent_blender_object = node.parent.blender_object if node.parent else None
+            #parent_blender_object = node.parent.blender_object if node.parent else None
 
-        node_name = self.gltf_node.name
-        if not node_name:
-            node_name = '_%03d' % self.index
+            node_name = self.gltf_node.name
+            if not node_name:
+                node_name = '_%03d' % self.index
 
-        skin_name = skin.name
-        if skin_name:
-            skin_name = 'armature' + node_name
+            skin_name = skin.name
+            if skin_name:
+                skin_name = 'armature' + node_name
 
-        armature = None
-        parent_bone = None
-        if self.parent and self.parent.skin == skin:
-            armature = self.parent.blender_armature.data
-            self.blender_armature = self.parent.blender_armature
-            parent_bone = self.parent.blender_bone
-        else:
-            # new armature
-            armature = bpy.data.armatures.new(skin_name)
-            self.blender_armature = bpy.data.objects.new(skin_name, armature)
-            collection.objects.link(self.blender_armature)
+            if self.parent and self.parent.skin == skin:
+                parent_bone = self.parent.blender_bone
+                armature = self.parent.blender_armature.data
+                self.blender_armature = self.parent.blender_armature
+            else:
+                parent_bone = None
+                # new armature
+                armature = bpy.data.armatures.new(skin_name)
+                self.blender_armature = bpy.data.objects.new(
+                    skin_name, armature)
+                collection.objects.link(self.blender_armature)
 
-            # select and edit mode
-            self.blender_armature.select_set("SELECT")
-            view_layer.objects.active = self.blender_armature
-            bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
-            bpy.ops.object.mode_set(mode='EDIT', toggle=False)
+                # select and edit mode
+                self.blender_armature.select_set("SELECT")
+                view_layer.objects.active = self.blender_armature
+                bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+                bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
-        # create bone
-        self.blender_bone = armature.edit_bones.new(node_name)
-        #parent_position = mathutils.Vector((0, 0, 0))
-        if parent_bone:
-            self.blender_bone.parent = parent_bone
-            self.blender_bone.use_connect = True
-            #parent_position = parent_blender_object.matrix_world.to_translation()
-        self.blender_bone.head = blender_object.matrix_world.to_translation()
-        if not self.children:
-            self.blender_bone.tail = self.blender_bone.head + \
-                (self.blender_bone.head - self.parent.blender_bone.head)
+            # create bone
+            self.blender_bone = armature.edit_bones.new(node_name)
+            #parent_position = mathutils.Vector((0, 0, 0))
+            if is_connect:
+                self.blender_bone.parent = parent_bone
+                self.blender_bone.use_connect = True
+                #parent_position = parent_blender_object.matrix_world.to_translation()
+            self.blender_bone.head = blender_object.matrix_world.to_translation()
+            if not self.children:
+                self.blender_bone.tail = self.blender_bone.head + \
+                    (self.blender_bone.head - self.parent.blender_bone.head)
+
+        def child_is_connect(child_pos)->bool:
+            if not self.skin:
+                return False
+            if len(self.children) == 1:
+                return True
+
+            parent_head = mathutils.Vector((0, 0, 0))
+            if parent_bone:
+                parent_head = parent_bone.head
+            parent_dir = (self.blender_bone.head - parent_head).normalized()
+            child_dir = (child_pos - blender_object.matrix_world.to_translation()).normalized()
+            dot = parent_dir.dot(child_dir)
+            print(parent_dir, child_dir, dot)
+            return dot > 0.8
+
+        for child in self.children:
+            child.create_armature(collection, view_layer, child_is_connect(
+                child.blender_object.matrix_world.to_translation()))
 
 
 def load_objects(context, progress: ProgressReport,
@@ -177,7 +195,7 @@ def load_objects(context, progress: ProgressReport,
     nodes[0].create_object(progress, collection, meshes, mod_v, mod_q)
 
     # build armature
-    nodes[0].create_armature(collection, view_layer)
+    nodes[0].create_armature(collection, view_layer, False)
     bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
     progress.leave_substeps()
