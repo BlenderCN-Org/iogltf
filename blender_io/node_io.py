@@ -160,6 +160,7 @@ class Node:
                 self.blender_armature = bpy.data.objects.new(
                     skin_name, armature)
                 collection.objects.link(self.blender_armature)
+                self.blender_armature.show_in_front = True
 
                 # select and edit mode
                 self.blender_armature.select_set("SELECT")

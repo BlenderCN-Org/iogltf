@@ -80,9 +80,11 @@ def get_indices(base: pathlib.Path, gltf: gltftypes.glTF, accessor_index: int):
         accessor.byteOffset:accessor.byteOffset+accessor_byte_len]
     if (accessor.componentType == gltftypes.Accessor_componentType.SHORT
             or accessor.componentType == gltftypes.Accessor_componentType.UNSIGNED_SHORT):
-        return (ctypes.c_ushort * accessor.count).from_buffer_copy(segment) # type: ignore
+        # type: ignore
+        return (ctypes.c_ushort * accessor.count).from_buffer_copy(segment)
     elif accessor.componentType == gltftypes.Accessor_componentType.UNSIGNED_INT:
-        return (ctypes.c_uint * accessor.count).from_buffer_copy(segment) # type: ignore
+        # type: ignore
+        return (ctypes.c_uint * accessor.count).from_buffer_copy(segment)
 
 
 class Float2(ctypes.Structure):
@@ -130,8 +132,9 @@ class VertexBuffer:
 
         def index_count(prim: gltftypes.MeshPrimitive)->int:
             return gltf.accessors[prim.indices].count
-        index_count = sum((index_count(prim) for prim in mesh.primitives), 0) # type: ignore
-        self.indices = (ctypes.c_int * index_count)() # type: ignore
+        index_count = sum((index_count(prim)
+                           for prim in mesh.primitives), 0)  # type: ignore
+        self.indices = (ctypes.c_int * index_count)()  # type: ignore
 
         pos_index = 0
         nom_index = 0
@@ -154,24 +157,25 @@ class VertexBuffer:
                     path, gltf, prim.attributes['TEXCOORD_0'], Float2)
                 if len(uv) != len(pos):
                     raise Exception("len(uv) different from len(pos)")
-            for i, _ in enumerate(pos):
-                self.pos[pos_index] = pos[i].x
+            for p in pos:
+                self.pos[pos_index] = p.x
                 pos_index += 1
-                self.pos[pos_index] = pos[i].y
+                self.pos[pos_index] = p.y
                 pos_index += 1
-                self.pos[pos_index] = pos[i].z
+                self.pos[pos_index] = p.z
                 pos_index += 1
 
-                if nom:
-                    self.nom[nom_index] = nom[i].x
+            if nom:
+                for n in nom:
+                    self.nom[nom_index] = n.x
                     nom_index += 1
-                    self.nom[nom_index] = nom[i].y
+                    self.nom[nom_index] = n.y
                     nom_index += 1
-                    self.nom[nom_index] = nom[i].z
+                    self.nom[nom_index] = n.z
                     nom_index += 1
 
-                if uv:
-                    xy = uv[i]
+            if uv:
+                for xy in uv:
                     xy.y = 1.0 - xy.y
                     self.uv[uv_index] = xy
                     uv_index += 1
