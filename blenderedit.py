@@ -20,7 +20,7 @@ def run():
         format='%(asctime)s[%(levelname)s][%(name)s.%(funcName)s] %(message)s'
     )
 
-    logger.debug(f"#### run {__name__} ####")
+    logger.debug("#### run %s ####", __name__)
 
     here = pathlib.Path(__file__).absolute().parent
     if here.suffix == '.blend':
@@ -34,11 +34,11 @@ def run():
     #path = here / sample_folder / 'CesiumMilkTruck/glTF/CesiumMilkTruck.gltf'
     path = here / sample_folder / 'CesiumMan/glTF/CesiumMan.gltf'
 
-    if False:
+    if False: # pylint: disable=W0125
         def mesh_str(mesh):
             return ''.join(str(prim.attributes) for prim in mesh.primitives)
 
-        for root, dirs, files in os.walk(here / sample_folder):
+        for root, _dirs, files in os.walk(here / sample_folder):
             root = pathlib.Path(root)
             for f in files:
                 f = root / f
@@ -47,8 +47,8 @@ def run():
                     with f.open() as r:
                         gltf = gltftypes.from_json(json.load(r))
                         print(f, [mesh_str(mesh) for mesh in gltf.meshes])
-    elif False:
-        for root, dirs, files in os.walk(here / sample_folder):
+    elif False: # pylint: disable=W0125
+        for root, _dirs, files in os.walk(here / sample_folder):
             root = pathlib.Path(root)
             for f in files:
                 f = root / f
@@ -62,7 +62,7 @@ def run():
 
         try:
             iogltf.unregister()
-        except:
+        except: # pylint: disable=W0702
             pass
         iogltf.register()
 
