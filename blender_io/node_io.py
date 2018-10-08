@@ -2,6 +2,7 @@ from typing import Optional, List, Any, Generator, Tuple
 import json
 import pathlib
 import ctypes
+from contextlib import contextmanager
 
 import bpy
 import mathutils  # pylint: disable=E0401
@@ -30,6 +31,17 @@ class Mat16(ctypes.Structure):
         ("f32", ctypes.c_float),
         ("f33", ctypes.c_float),
     ]
+
+
+
+@contextmanager
+def tmp_mode(obj, tmp: str):
+    mode = obj.rotation_mode
+    obj.rotation_mode = tmp
+    try:
+        yield
+    finally:
+        obj.rotation_mode = mode
 
 
 class Skin:
@@ -104,8 +116,8 @@ class Node:
         if self.gltf_node.rotation:
             r = self.gltf_node.rotation
             q = mathutils.Quaternion((r[3], r[0], r[1], r[2]))
-            self.blender_object.rotation_mode = 'QUATERNION'
-            self.blender_object.rotation_quaternion = mod_q(q)
+            with tmp_mode(self.blender_object, 'QUATERNION'):
+                self.blender_object.rotation_quaternion = mod_q(q)
 
         if self.gltf_node.scale:
             s = self.gltf_node.scale
@@ -121,8 +133,8 @@ class Node:
             ))
             t, q, s = matrix.decompose()
             self.blender_object.location = mod_v(t)
-            self.blender_object.rotation_mode = 'QUATERNION'
-            self.blender_object.rotation_quaternion = mod_q(q)
+            with tmp_mode(self.blender_object, 'QUATERNION'):
+                self.blender_object.rotation_quaternion = mod_q(q)
             self.blender_object.scale = (s[0], s[2], s[1])
 
         progress.step()
@@ -131,7 +143,7 @@ class Node:
             child.create_object(progress, collection, meshes, mod_v, mod_q)
 
     # create armature
-    def create_armature(self, collection, view_layer, is_connect: bool)->None:
+    def create_armature(self, context, collection, view_layer, is_connect: bool)->None:
         if self.skin:
             skin = self.skin
 
@@ -161,20 +173,25 @@ class Node:
                     skin_name, armature)
                 collection.objects.link(self.blender_armature)
                 self.blender_armature.show_in_front = True
+                self.blender_armature.parent = self.blender_object.parent
 
                 # select and edit mode
                 self.blender_armature.select_set("SELECT")
                 view_layer.objects.active = self.blender_armature
                 bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
+
+                m = mathutils.Matrix()
+                m.identity()
+                self.blender_armature.matrix_world = m
+                context.scene.update()
+
                 bpy.ops.object.mode_set(mode='EDIT', toggle=False)
 
             # create bone
             self.blender_bone = armature.edit_bones.new(node_name)
-            #parent_position = mathutils.Vector((0, 0, 0))
-            if is_connect:
-                self.blender_bone.parent = parent_bone
-                self.blender_bone.use_connect = True
-                #parent_position = parent_blender_object.matrix_world.to_translation()
+            self.blender_bone.use_connect = is_connect
+            self.blender_bone.parent = parent_bone
+
             object_pos = blender_object.matrix_world.to_translation()
             #skin_pos = skin.get_matrix(self.skin_joint).inverted().to_translation()
             #print(object_pos, skin_pos)
@@ -200,7 +217,7 @@ class Node:
             return dot > 0.8
 
         for child in self.children:
-            child.create_armature(collection, view_layer, child_is_connect(
+            child.create_armature(context, collection, view_layer, child_is_connect(
                 child.blender_object.matrix_world.to_translation()))
 
 
@@ -251,7 +268,7 @@ def load_objects(context, progress: ProgressReport,
     nodes[0].create_object(progress, collection, meshes, mod_v, mod_q)
 
     # build armature
-    nodes[0].create_armature(collection, view_layer, False)
+    nodes[0].create_armature(context, collection, view_layer, False)
     bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
     progress.leave_substeps()
