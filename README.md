@@ -4,7 +4,7 @@ GLTF Importer and Exporter for blender-2.8
 ## import_gltf.py
 
 [ ] RemoveEmpties
-[ ] BoneWeight
+[x] BoneWeight
 [ ] Remove Z-UP to Y-UP root
 
 ## blender_groupnode_io.py

@@ -9,7 +9,7 @@ from progress_report import ProgressReport
 
 from .. import gltftypes, gltf_buffer
 from . import blender_groupnode_io, gltf_pbr_node
-from .node_io import * # pylint: disable=W0401
+from .node_io import *  # pylint: disable=W0401
 
 from logging import getLogger  # pylint: disable=C0411
 logger = getLogger(__name__)
@@ -104,25 +104,26 @@ def load_materials(progress: ProgressReport,
 
 
 def load_meshes(progress: ProgressReport, base_dir: pathlib.Path,
-                materials: List[Any], gltf: gltftypes.glTF)->List[Any]:
+                materials: List[Any], gltf: gltftypes.glTF
+                )->List[Tuple[bpy.types.Mesh, gltf_buffer.VertexBuffer]]:
 
     def create_mesh(mesh: gltftypes.Mesh):
         blender_mesh = bpy.data.meshes.new(mesh.name)
         for prim in mesh.primitives:
             blender_mesh.materials.append(materials[prim.material])
 
-        vertices = gltf_buffer.VertexBuffer(base_dir, gltf, mesh)
+        attributes = gltf_buffer.VertexBuffer(base_dir, gltf, mesh)
 
-        blender_mesh.vertices.add(len(vertices.pos)/3)
+        blender_mesh.vertices.add(len(attributes.pos)/3)
         blender_mesh.vertices.foreach_set(
-            "co", vertices.pos)
+            "co", attributes.pos)
         blender_mesh.vertices.foreach_set(
-            "normal", vertices.nom)
+            "normal", attributes.nom)
 
-        blender_mesh.loops.add(len(vertices.indices))
-        blender_mesh.loops.foreach_set("vertex_index", vertices.indices)
+        blender_mesh.loops.add(len(attributes.indices))
+        blender_mesh.loops.foreach_set("vertex_index", attributes.indices)
 
-        triangle_count = int(len(vertices.indices) / 3)
+        triangle_count = int(len(attributes.indices) / 3)
         blender_mesh.polygons.add(triangle_count)
         starts = [i * 3 for i in range(triangle_count)]
         blender_mesh.polygons.foreach_set("loop_start", starts)
@@ -133,9 +134,9 @@ def load_meshes(progress: ProgressReport, base_dir: pathlib.Path,
         for blen_poly in blender_mesh.polygons:
             blen_poly.use_smooth = True
             for lidx in blen_poly.loop_indices:
-                index = vertices.indices[lidx]
+                index = attributes.indices[lidx]
                 # vertex uv to face uv
-                uv = vertices.uv[index]
+                uv = attributes.uv[index]
                 blen_uvs.data[lidx].uv = (
                     uv.x, uv.y)  # vertical flip uv
 
@@ -144,7 +145,7 @@ def load_meshes(progress: ProgressReport, base_dir: pathlib.Path,
         blender_mesh.update()
 
         progress.step()
-        return blender_mesh
+        return blender_mesh, attributes
 
     progress.enter_substeps(len(gltf.meshes), "Loading meshes...")
     meshes = [create_mesh(mesh) for mesh in gltf.meshes]
