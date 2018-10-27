@@ -53,8 +53,9 @@ def _setup_skinning(blender_object: bpy.types.Object,
     modifier.object = armature_object
 
 
-def load(context, filepath: str,
-         global_matrix  # pylint: disable=W0613
+def load(context,
+         filepath: str,
+         yup_to_zup: bool
          )->Set[str]:
 
     path = pathlib.Path(filepath)
@@ -67,7 +68,6 @@ def load(context, filepath: str,
         with path.open() as f:
             gltf = gltftypes.from_json(json.load(f))
 
-        yup_to_zup = False
         manager = ImportManager(path, gltf, yup_to_zup)
         manager.textures.extend(blender_io.load_textures(progress, manager))
         manager.materials.extend(blender_io.load_materials(progress, manager))

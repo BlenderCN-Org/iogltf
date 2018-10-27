@@ -190,7 +190,8 @@ class UShort4(ctypes.Structure):
 
 
 class VertexBuffer:
-    def __init__(self, path: pathlib.Path, gltf: gltftypes.glTF, mesh: gltftypes.Mesh)->None:
+    def __init__(self, path: pathlib.Path, gltf: gltftypes.glTF,
+                 mesh: gltftypes.Mesh, yup_to_zup: bool)->None:
         # check shared attributes
         attributes: Dict[str, int] = {}
         shared = True
@@ -259,26 +260,44 @@ class VertexBuffer:
                 if len(weights) != len(pos):
                     raise Exception("len(weights) different from len(pos)")
 
-            for p in pos:
-                self.pos[pos_index] = p.x
-                pos_index += 1
-                self.pos[pos_index] = p.y
-                pos_index += 1
-                self.pos[pos_index] = p.z
-                pos_index += 1
+            if yup_to_zup:
+                for p in pos:
+                    self.pos[pos_index] = p.x
+                    pos_index += 1
+                    self.pos[pos_index] = -p.z
+                    pos_index += 1
+                    self.pos[pos_index] = p.y
+                    pos_index += 1
 
-            if nom:
-                for n in nom:
-                    self.nom[nom_index] = n.x
-                    nom_index += 1
-                    self.nom[nom_index] = n.y
-                    nom_index += 1
-                    self.nom[nom_index] = n.z
-                    nom_index += 1
+                if nom:
+                    for n in nom:
+                        self.nom[nom_index] = n.x
+                        nom_index += 1
+                        self.nom[nom_index] = -n.z
+                        nom_index += 1
+                        self.nom[nom_index] = n.y
+                        nom_index += 1
+            else:
+                for p in pos:
+                    self.pos[pos_index] = p.x
+                    pos_index += 1
+                    self.pos[pos_index] = p.y
+                    pos_index += 1
+                    self.pos[pos_index] = p.z
+                    pos_index += 1
+
+                if nom:
+                    for n in nom:
+                        self.nom[nom_index] = n.x
+                        nom_index += 1
+                        self.nom[nom_index] = n.y
+                        nom_index += 1
+                        self.nom[nom_index] = n.z
+                        nom_index += 1
 
             if uv:
                 for xy in uv:
-                    xy.y = 1.0 - xy.y
+                    xy.y = 1.0 - xy.y  # flip vertical
                     self.uv[uv_index] = xy
                     uv_index += 1
 

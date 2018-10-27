@@ -16,7 +16,11 @@ class ImportManager:
         self.materials: List[bpy.types.Material] = []
         self.meshes: List[Tuple[bpy.types.Mesh, VertexBuffer]] = []
 
-        self.mod_v = lambda v: (
-            v[0], v[1], v[2]) if yup_to_zup else lambda v: v
-        self.mod_q = lambda q: mathutils.Quaternion(
-            self.mod_v(q.axis), q.angle) if yup_to_zup else lambda q: q
+        self.yup_to_zup = yup_to_zup
+        if self.yup_to_zup:
+            self.mod_v = lambda v: (v[0], -v[2], v[1])
+            self.mod_q = lambda q: mathutils.Quaternion(
+                self.mod_v(q.axis), q.angle)
+        else:
+            self.mod_v = lambda v: v
+            self.mod_q = lambda q: q

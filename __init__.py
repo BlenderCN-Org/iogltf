@@ -18,12 +18,17 @@ if "import_gltf" in locals():
     importlib.reload(import_gltf)  # pylint: disable=E0601
     importlib.reload(gltftypes)  # pylint: disable=E0601
     importlib.reload(blender_io)  # pylint: disable=E0601
-    importlib.reload(node_io)  # pylint: disable=E0601
     importlib.reload(gltf_buffer)  # pylint: disable=E0601
+
+    importlib.reload(texture_io)  # pylint: disable=E0601
+    importlib.reload(material_io)  # pylint: disable=E0601
+    importlib.reload(mesh_io)  # pylint: disable=E0601
+    importlib.reload(node_io)  # pylint: disable=E0601
     importlib.reload(node)  # pylint: disable=E0601
     importlib.reload(import_manager)  # pylint: disable=E0601
+
 from . import import_gltf, gltftypes, blender_io, gltf_buffer  # pylint: disable=C0413
-from .blender_io import import_manager, node_io, node  # pylint: disable=C0413
+from .blender_io import texture_io, material_io, mesh_io, node_io, node, import_manager
 
 
 bl_info = {
@@ -39,7 +44,6 @@ bl_info = {
     "category": "Import-Export"}
 
 
-@orientation_helper(axis_forward='-Z', axis_up='Y')
 class ImportGLTF(bpy.types.Operator, ImportHelper):
     """Load a GLTF"""
     bl_idname = "import_scene.iogltf"
@@ -48,22 +52,16 @@ class ImportGLTF(bpy.types.Operator, ImportHelper):
 
     filename_ext = ".gltf"
     filter_glob = StringProperty(default="*.gltf", options={'HIDDEN'})
+    yup_to_zup = BoolProperty(default=True)
 
     def execute(self, context):
         keywords = self.as_keywords(
             ignore=(
-                "axis_forward",
-                "axis_up",
                 "filter_glob",
+                'axis_forward',
+                'axis_up'
             )
         )
-        global_matrix = axis_conversion(
-            from_forward=self.axis_forward,
-            from_up=self.axis_up,
-        ).to_4x4()
-
-        keywords["global_matrix"] = global_matrix
-
         return import_gltf.load(context, **keywords)
 
 
