@@ -1,6 +1,9 @@
 import pathlib
 from typing import List, Tuple
+
 import bpy
+import mathutils  # pylint: disable=E0401
+
 from ..gltftypes import glTF
 from ..gltf_buffer import VertexBuffer
 
@@ -13,11 +16,7 @@ class ImportManager:
         self.materials: List[bpy.types.Material] = []
         self.meshes: List[Tuple[bpy.types.Mesh, VertexBuffer]] = []
 
-    # setup from root to descendants
-    def mod_v(self, v):
-        # return (v[0], v[1], v[2])
-        return v
-
-    def mod_q(self, q):
-        # return mathutils.Quaternion(mod_v(q.axis), q.angle)
-        return q
+        self.mod_v = lambda v: (
+            v[0], v[1], v[2]) if yup_to_zup else lambda v: v
+        self.mod_q = lambda q: mathutils.Quaternion(
+            self.mod_v(q.axis), q.angle) if yup_to_zup else lambda q: q
