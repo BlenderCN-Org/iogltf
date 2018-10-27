@@ -6,14 +6,15 @@ from progress_report import ProgressReport  # , ProgressReportSubstep
 import bpy
 
 from . import gltftypes, blender_io
+from .blender_io.import_manager import ImportManager
 
 from logging import getLogger  # pylint: disable=C0411
 logger = getLogger(__name__)
 
 
-def setup_skinning(blender_object: bpy.types.Object,
-                   joints, weights, bone_names: List[str],
-                   armature_object: bpy.types.Object)->None:
+def _setup_skinning(blender_object: bpy.types.Object,
+                    joints, weights, bone_names: List[str],
+                    armature_object: bpy.types.Object)->None:
     # create vertex groups
     for bone_name in bone_names:
         blender_object.vertex_groups.new(
@@ -43,7 +44,7 @@ def setup_skinning(blender_object: bpy.types.Object,
                 cpt += 1
 
     # select
-    #for obj_sel in bpy.context.scene.objects:
+    # for obj_sel in bpy.context.scene.objects:
     #    obj_sel.select = False
     #blender_object.select = True
     #bpy.context.scene.objects.active = blender_object
@@ -55,8 +56,8 @@ def setup_skinning(blender_object: bpy.types.Object,
 def load(context, filepath: str,
          global_matrix  # pylint: disable=W0613
          )->Set[str]:
+
     path = pathlib.Path(filepath)
-    base_dir = path.parent
     if not path.exists():
         return {'CANCELLED'}
 
@@ -66,24 +67,24 @@ def load(context, filepath: str,
         with path.open() as f:
             gltf = gltftypes.from_json(json.load(f))
 
-        textures = blender_io.load_textures(progress, base_dir, gltf)
-
-        materials = blender_io.load_materials(progress, textures, gltf)
-
-        meshes = blender_io.load_meshes(progress, base_dir, materials, gltf)
-
-        nodes = blender_io.load_objects(context, progress, base_dir,
-                                        [mesh for mesh, _ in meshes], gltf)
+        yup_to_zup = False
+        manager = ImportManager(path, gltf, yup_to_zup)
+        manager.textures.extend(blender_io.load_textures(progress, manager))
+        manager.materials.extend(blender_io.load_materials(progress, manager))
+        manager.meshes.extend(blender_io.load_meshes(progress, manager))
+        nodes = blender_io.load_objects(
+            context, progress, manager)
 
         # skinning
         for node in nodes:
             if node.gltf_node.mesh != -1 and node.gltf_node.skin != -1:
-                _, attributes = meshes[node.gltf_node.mesh]
+                _, attributes = manager.meshes[node.gltf_node.mesh]
                 skin = gltf.skins[node.gltf_node.skin]
-                bone_names = [nodes[joint].bone_name for joint in skin.joints]
-                setup_skinning(node.blender_object, attributes.joints,
-                               attributes.weights, bone_names,
-                               nodes[skin.skeleton].blender_armature)
+                bone_names = [
+                    nodes[joint].bone_name for joint in skin.joints]
+                _setup_skinning(node.blender_object, attributes.joints,
+                                attributes.weights, bone_names,
+                                nodes[skin.skeleton].blender_armature)
 
         context.scene.update()
 
