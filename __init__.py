@@ -12,10 +12,9 @@ from bpy_extras.io_utils import (
     orientation_helper,
     axis_conversion,
 )
-if "import_gltf" in locals():
-    print('reload', 'import_gltf')
+if "blender_io" in locals():
+    print('reload', 'blender_io')
     import importlib
-    importlib.reload(import_gltf)  # pylint: disable=E0601
     importlib.reload(gltftypes)  # pylint: disable=E0601
     importlib.reload(blender_io)  # pylint: disable=E0601
     importlib.reload(gltf_buffer)  # pylint: disable=E0601
@@ -27,7 +26,7 @@ if "import_gltf" in locals():
     importlib.reload(node)  # pylint: disable=E0601
     importlib.reload(import_manager)  # pylint: disable=E0601
 
-from . import import_gltf, gltftypes, blender_io, gltf_buffer  # pylint: disable=C0413
+from . import gltftypes, blender_io, gltf_buffer  # pylint: disable=C0413
 from .blender_io import texture_io, material_io, mesh_io, node_io, node, import_manager
 
 
@@ -62,7 +61,7 @@ class ImportGLTF(bpy.types.Operator, ImportHelper):
                 'axis_up'
             )
         )
-        return import_gltf.load(context, **keywords)
+        return blender_io.load(context, **keywords)
 
 
 def menu_func_import(self, _context):
