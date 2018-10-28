@@ -1,5 +1,5 @@
 import json
-from typing import Optional, List
+from typing import Optional, List, Iterable
 from contextlib import contextmanager
 
 import bpy
@@ -43,6 +43,12 @@ class Node:
 
     def __repr__(self)->str:
         return f'<{self.index}: {self.blender_object}>'
+
+    def get_ancestors(self)->Iterable['Node']:
+        yield self
+        if self.parent:
+            for x in self.parent.get_ancestors():
+                yield x
 
     def create_object(self, progress: ProgressReport,
                       collection: bpy.types.Collection,
@@ -102,8 +108,6 @@ class Node:
     def create_armature(self, context, collection, view_layer,
                         skin: gltftypes.Skin)->bpy.types.Object:
         skin_name = skin.name
-        if skin_name:
-            skin_name = 'armature' + self.name
 
         armature = bpy.data.armatures.new(skin_name)
         self.blender_armature = bpy.data.objects.new(

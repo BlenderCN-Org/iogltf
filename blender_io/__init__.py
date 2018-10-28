@@ -123,8 +123,7 @@ def load(context,
         manager.textures.extend(load_textures(progress, manager))
         manager.materials.extend(load_materials(progress, manager))
         manager.meshes.extend(load_meshes(progress, manager))
-        nodes = load_objects(
-            context, progress, manager)
+        nodes, root = load_objects(context, progress, manager)
 
         # skinning
         for node in nodes:
@@ -139,9 +138,7 @@ def load(context,
                                 nodes[skin.skeleton].blender_armature)
 
         # remove empties
-        roots = [node for node in enumerate(nodes) if not node[1].parent]
-        for _, root in roots:
-            _remove_empty(root)
+        _remove_empty(root)
 
         # done
         context.scene.update()
