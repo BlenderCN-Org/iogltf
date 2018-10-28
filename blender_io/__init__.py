@@ -12,6 +12,7 @@ from .texture_io import load_textures
 from .material_io import load_materials
 from .mesh_io import load_meshes
 from .node_io import load_objects
+from .node import Node
 
 
 from logging import getLogger  # pylint: disable=C0411
@@ -91,6 +92,34 @@ def load(context,
                 _setup_skinning(node.blender_object, attributes.joints,
                                 attributes.weights, bone_names,
                                 nodes[skin.skeleton].blender_armature)
+
+        # remove empties
+        roots = [node for node in enumerate(nodes) if not node[1].parent]
+        if len(roots) != 1 and roots[0][0] != 0:
+            raise Exception()
+
+        def remove_empty(node: Node):
+            for i in range(len(node.children)-1, -1, -1):
+                child = node.children[i]
+                remove_empty(child)
+
+            if node.children:
+                print(f'{node} children {len(node.children)}')
+                return
+            if node.blender_armature:
+                print(f'{node} has {node.blender_armature}')
+                return
+            if node.blender_object.data:
+                print(f'{node} has {node.blender_object}')
+                return
+
+            # remove empty
+            print('remove', node)
+            bpy.data.objects.remove(node.blender_object, do_unlink=True)
+            if node.parent:
+                node.parent.children.remove(node)
+
+        remove_empty(roots[0][1])
 
         context.scene.update()
 

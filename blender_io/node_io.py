@@ -54,8 +54,6 @@ def load_objects(context, progress: ProgressReport,
             child = nodes[child_index]
             node.children.append(child)
             child.parent = node
-    if nodes[0].parent:
-        raise Exception()
 
     progress.step()
 
