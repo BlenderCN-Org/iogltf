@@ -236,24 +236,28 @@ class VertexBuffer:
             pos = get_array(
                 path, gltf, prim.attributes['POSITION'])
 
+            nom = None
             if 'NORMAL' in prim.attributes:
                 nom = get_array(
                     path, gltf, prim.attributes['NORMAL'])
                 if len(nom) != len(pos):
                     raise Exception("len(nom) different from len(pos)")
 
+            uv = None
             if 'TEXCOORD_0' in prim.attributes:
                 uv = get_array(
                     path, gltf, prim.attributes['TEXCOORD_0'])
                 if len(uv) != len(pos):
                     raise Exception("len(uv) different from len(pos)")
 
+            joints = None
             if 'JOINTS_0' in prim.attributes:
                 joints = get_array(
                     path, gltf, prim.attributes['JOINTS_0'])
                 if len(joints) != len(pos):
                     raise Exception("len(joints) different from len(pos)")
 
+            weights = None
             if 'WEIGHTS_0' in prim.attributes:
                 weights = get_array(
                     path, gltf, prim.attributes['WEIGHTS_0'])
