@@ -1,18 +1,19 @@
 from typing import Tuple, List
 
-import bpy
-from progress_report import ProgressReport
-
 from . import gltftypes
 from . import gltf_buffer
 from .import_manager import ImportManager
+
+import bpy
+from progress_report import ProgressReport
 
 
 def _create_mesh(progress: ProgressReport, manager: ImportManager,
                  mesh: gltftypes.Mesh)->Tuple[bpy.types.Mesh, gltf_buffer.VertexBuffer]:
     blender_mesh = bpy.data.meshes.new(mesh.name)
-    for prim in mesh.primitives:
-        blender_mesh.materials.append(manager.materials[prim.material])
+    materials = [manager.materials[prim.material] for prim in mesh.primitives]
+    for m in materials:
+        blender_mesh.materials.append(m)
 
     attributes = gltf_buffer.VertexBuffer(manager, mesh)
 
@@ -35,6 +36,8 @@ def _create_mesh(progress: ProgressReport, manager: ImportManager,
     blen_uvs = blender_mesh.uv_layers.new()
     for blen_poly in blender_mesh.polygons:
         blen_poly.use_smooth = True
+        blen_poly.material_index = attributes.get_submesh_from_face(
+            blen_poly.index)
         for lidx in blen_poly.loop_indices:
             index = attributes.indices[lidx]
             # vertex uv to face uv

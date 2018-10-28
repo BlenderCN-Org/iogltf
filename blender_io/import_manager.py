@@ -137,6 +137,7 @@ class ImportManager:
     def __init__(self, path: pathlib.Path,
                  gltf: gltftypes.glTF, body: bytes,
                  yup_to_zup: bool)->None:
+        self.path = path
         self.base_dir = path.parent
         self.gltf = gltf
         self.body = body

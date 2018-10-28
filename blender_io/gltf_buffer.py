@@ -40,6 +40,7 @@ class VertexBuffer:
         index_count = sum((index_count(prim)  # type: ignore
                            for prim in mesh.primitives), 0)
         self.indices = (ctypes.c_int * index_count)()  # type: ignore
+        self.submesh_index_count: List[int] = []
 
         pos_index = 0
         nom_index = 0
@@ -131,4 +132,15 @@ class VertexBuffer:
             for i in indices:
                 self.indices[indices_index] = offset + i
                 indices_index += 1
+
+            self.submesh_index_count.append(len(indices))
             offset += len(pos)
+
+    def get_submesh_from_face(self, face_index)->int:
+        target = face_index*3
+        n = 0
+        for i, count in enumerate(self.submesh_index_count):
+            n += count
+            if target < n:
+                return i
+        return -1
