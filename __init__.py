@@ -60,7 +60,7 @@ class ImportGLTF(bpy.types.Operator):
 
     yup_to_zup = BoolProperty(default=True)
 
-    def invoke(self, context, event):
+    def invoke(self, context, _event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 

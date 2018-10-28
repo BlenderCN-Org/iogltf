@@ -60,6 +60,28 @@ def _setup_skinning(blender_object: bpy.types.Object,
     modifier.object = armature_object
 
 
+def _remove_empty(node: Node):
+    for i in range(len(node.children)-1, -1, -1):
+        child = node.children[i]
+        _remove_empty(child)
+
+    if node.children:
+        print(f'{node} children {len(node.children)}')
+        return
+    if node.blender_armature:
+        print(f'{node} has {node.blender_armature}')
+        return
+    if node.blender_object.data:
+        print(f'{node} has {node.blender_object}')
+        return
+
+    # remove empty
+    print('remove', node)
+    bpy.data.objects.remove(node.blender_object, do_unlink=True)
+    if node.parent:
+        node.parent.children.remove(node)
+
+
 def load(context,
          filepath: str,
          yup_to_zup: bool
@@ -97,31 +119,9 @@ def load(context,
         roots = [node for node in enumerate(nodes) if not node[1].parent]
         if len(roots) != 1 and roots[0][0] != 0:
             raise Exception()
+        _remove_empty(roots[0][1])
 
-        def remove_empty(node: Node):
-            for i in range(len(node.children)-1, -1, -1):
-                child = node.children[i]
-                remove_empty(child)
-
-            if node.children:
-                print(f'{node} children {len(node.children)}')
-                return
-            if node.blender_armature:
-                print(f'{node} has {node.blender_armature}')
-                return
-            if node.blender_object.data:
-                print(f'{node} has {node.blender_object}')
-                return
-
-            # remove empty
-            print('remove', node)
-            bpy.data.objects.remove(node.blender_object, do_unlink=True)
-            if node.parent:
-                node.parent.children.remove(node)
-
-        remove_empty(roots[0][1])
-
+        # done
         context.scene.update()
-
         progress.leave_substeps("Finished")
         return {'FINISHED'}
