@@ -44,6 +44,12 @@ class Node:
     def __repr__(self)->str:
         return f'<{self.index}: {self.blender_object}>'
 
+    def traverse(self)->Iterable['Node']:
+        yield self
+        for child in self.children:
+            for x in child.traverse():
+                yield x
+
     def get_ancestors(self)->Iterable['Node']:
         yield self
         if self.parent:
@@ -140,11 +146,18 @@ class Node:
 
         self.blender_bone = armature.edit_bones.new(self.name)
         self.bone_name = self.blender_bone.name
-        self.blender_bone.use_connect = is_connect
         self.blender_bone.parent = parent_bone
+        if is_connect:
+            self.blender_bone.use_connect = True
 
         object_pos = self.blender_object.matrix_world.to_translation()
         self.blender_bone.head = object_pos
+
+        if not is_connect:
+            if parent_bone and parent_bone.tail == (0, 0, 0):
+                tail_offset = (self.blender_bone.head -
+                               parent_bone.head).normalized() * 0.1
+                parent_bone.tail = parent_bone.head + tail_offset
 
         if not self.children:
             if parent_bone:
@@ -155,19 +168,20 @@ class Node:
                 if len(self.children) == 1:
                     return True
 
-                parent_head = mathutils.Vector((0, 0, 0))
-                if parent_bone:
-                    parent_head = parent_bone.head
-                parent_dir = (self.blender_bone.head -
-                              parent_head).normalized()
-                child_dir = (
-                    child_pos - self.blender_object.matrix_world.to_translation()).normalized()
-                dot = parent_dir.dot(child_dir)
-                # print(parent_dir, child_dir, dot)
-                return dot > 0.8
+                if abs(child_pos.x) < 0.001:
+                    return True
 
-            for child in self.children:
-                child_is_connect = get_child_is_connect(
-                    child.blender_object.matrix_world.to_translation())
+                return False
+
+            if parent_bone:
+                child_is_connect = 0
+                for i, child in enumerate(self.children):
+                    if get_child_is_connect(
+                            child.blender_object.matrix_world.to_translation()):
+                        child_is_connect = i
+            else:
+                child_is_connect = -1
+
+            for i, child in enumerate(self.children):
                 child.create_bone(
-                    skin, armature, self.blender_bone, child_is_connect)
+                    skin, armature, self.blender_bone, i == child_is_connect)

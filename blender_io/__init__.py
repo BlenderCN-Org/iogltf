@@ -126,6 +126,9 @@ def load(context,
         nodes, root = load_objects(context, progress, manager)
 
         # skinning
+        armature_object = next(
+            node for node in root.traverse() if node.blender_armature)
+
         for node in nodes:
             if node.gltf_node.mesh != -1 and node.gltf_node.skin != -1:
                 _, attributes = manager.meshes[node.gltf_node.mesh]
@@ -133,9 +136,12 @@ def load(context,
                 skin = gltf.skins[node.gltf_node.skin]
                 bone_names = [
                     nodes[joint].bone_name for joint in skin.joints]
+
+                #armature_object =nodes[skin.skeleton].blender_armature
+
                 _setup_skinning(node.blender_object, attributes,
                                 bone_names,
-                                nodes[skin.skeleton].blender_armature)
+                                armature_object.blender_armature)
 
         # remove empties
         _remove_empty(root)
