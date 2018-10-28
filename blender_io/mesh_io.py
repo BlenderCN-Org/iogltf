@@ -3,7 +3,8 @@ from typing import Tuple, List
 import bpy
 from progress_report import ProgressReport
 
-from .. import gltftypes, gltf_buffer
+from . import gltftypes
+from . import gltf_buffer
 from .import_manager import ImportManager
 
 
@@ -13,8 +14,7 @@ def _create_mesh(progress: ProgressReport, manager: ImportManager,
     for prim in mesh.primitives:
         blender_mesh.materials.append(manager.materials[prim.material])
 
-    attributes = gltf_buffer.VertexBuffer(
-        manager.base_dir, manager.gltf, mesh, manager.yup_to_zup)
+    attributes = gltf_buffer.VertexBuffer(manager, mesh)
 
     blender_mesh.vertices.add(len(attributes.pos)/3)
     blender_mesh.vertices.foreach_set(

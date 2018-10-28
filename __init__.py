@@ -15,10 +15,11 @@ from bpy_extras.io_utils import (
 if "blender_io" in locals():
     print('reload', 'blender_io')
     import importlib
-    importlib.reload(gltftypes)  # pylint: disable=E0601
     importlib.reload(blender_io)  # pylint: disable=E0601
-    importlib.reload(gltf_buffer)  # pylint: disable=E0601
 
+    importlib.reload(glb)  # pylint: disable=E0601
+    importlib.reload(gltftypes)  # pylint: disable=E0601
+    importlib.reload(gltf_buffer)  # pylint: disable=E0601
     importlib.reload(texture_io)  # pylint: disable=E0601
     importlib.reload(material_io)  # pylint: disable=E0601
     importlib.reload(mesh_io)  # pylint: disable=E0601
@@ -26,8 +27,9 @@ if "blender_io" in locals():
     importlib.reload(node)  # pylint: disable=E0601
     importlib.reload(import_manager)  # pylint: disable=E0601
 
-from . import gltftypes, blender_io, gltf_buffer  # pylint: disable=C0413
-from .blender_io import texture_io, material_io, mesh_io, node_io, node, import_manager
+from . import blender_io  # pylint: disable=C0413
+from .blender_io import (texture_io, material_io, mesh_io, node_io,
+                         node, import_manager, gltf_buffer, gltftypes, glb)
 
 
 bl_info = {
@@ -49,8 +51,10 @@ class ImportGLTF(bpy.types.Operator):
     bl_label = "Import GLTF"
     bl_options = {'REGISTER', 'UNDO'}
 
-    filename_ext = ".gltf"
-    filter_glob = StringProperty(default="*.gltf", options={'HIDDEN'})
+    filename_ext = ".glb;.gltf;.vrm"
+    filter_glob = StringProperty(
+        default="*.glb;*.gltf;*.vrm",
+        options={'HIDDEN'})
     filepath = StringProperty(
         name="File Path",
         description="Filepath used for importing the file",

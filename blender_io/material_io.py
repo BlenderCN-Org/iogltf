@@ -4,7 +4,7 @@ from typing import List
 import bpy
 from progress_report import ProgressReport
 
-from .. import gltftypes
+from . import gltftypes
 from .import_manager import ImportManager
 from . import blender_groupnode_io, gltf_pbr_node
 

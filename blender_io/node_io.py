@@ -1,26 +1,24 @@
-import pathlib
 from typing import Any, List
 
 import bpy
 import mathutils  # pylint: disable=E0401
 from progress_report import ProgressReport
 
-from .. import gltftypes, gltf_buffer
+from . import gltftypes
 from .import_manager import ImportManager
 from .node import Node
 
 
 class Skin:
-    def __init__(self, base_dir: pathlib.Path, gltf: gltftypes.glTF, skin: gltftypes.Skin)->None:
-        self.base_dir = base_dir
-        self.gltf = gltf
+    def __init__(self, manager: ImportManager, skin: gltftypes.Skin)->None:
+        self.manager = manager
         self.skin = skin
         self.inverse_matrices: Any = None
 
     def get_matrix(self, joint: int)->Any:
         if not self.inverse_matrices:
-            self.inverse_matrices = gltf_buffer.get_array(
-                self.base_dir, self.gltf, self.skin.inverseBindMatrices)
+            self.inverse_matrices = self.manager.get_array(
+                self.skin.inverseBindMatrices)
         m = self.inverse_matrices[joint]
         mat = mathutils.Matrix((
             (m.f00, m.f10, m.f20, m.f30),
@@ -57,11 +55,32 @@ def load_objects(context, progress: ProgressReport,
 
     progress.step()
 
-    nodes[0].create_object(progress, collection, manager)
+    # check root
+    roots = [node for node in enumerate(nodes) if not node[1].parent]
+    if len(roots) != 1 or roots[0][0] != 0:
+        root = Node(len(nodes), gltftypes.Node({
+            'name': '__root__'
+        }))
+        for _, node in roots:
+            root.children.append(node)
+            node.parent = root
+        root.create_object(progress, collection, manager)
+    else:
+        nodes[0].create_object(progress, collection, manager)
+
+    def get_skeleton(skin: gltftypes.Skin)->Node:
+        if skin.skeleton != -1:
+            return nodes[skin.skeleton]
+
+        joints = [nodes[joint] for joint in skin.joints]
+        for joint in joints:
+            if joint.parent not in joints:
+                return joint
 
     # create armatures
     for skin in manager.gltf.skins:
-        nodes[skin.skeleton].create_armature(
+        skeleton = get_skeleton(skin)
+        skeleton.create_armature(
             context, collection, view_layer, skin)
 
     bpy.ops.object.mode_set(mode='OBJECT', toggle=False)

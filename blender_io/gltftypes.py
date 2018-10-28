@@ -1,6 +1,7 @@
-
+import struct
 from typing import Dict, Any, List, Optional
 from enum import Enum
+
 
 class Accessor_componentType(Enum):
     """The datatype of components in the attribute."""
@@ -10,6 +11,7 @@ class Accessor_componentType(Enum):
     UNSIGNED_SHORT = 5123
     UNSIGNED_INT = 5125
     FLOAT = 5126
+
 
 class Accessor_type(Enum):
     """Specifies if the attribute is a scalar, vector, or matrix."""
@@ -21,14 +23,17 @@ class Accessor_type(Enum):
     MAT3 = "MAT3"
     MAT4 = "MAT4"
 
+
 class AccessorSparseIndices_componentType(Enum):
     """The indices data type."""
     UNSIGNED_BYTE = 5121
     UNSIGNED_SHORT = 5123
     UNSIGNED_INT = 5125
 
+
 class AccessorSparseIndices:
     """Index array of size `count` that points to those accessor attributes that deviate from their initialization value. Indices must strictly increase."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -54,10 +59,13 @@ class AccessorSparseIndices:
         self.componentType: AccessorSparseIndices_componentType = None
         """The indices data type."""
         if (js and "componentType" in js):
-            self.componentType: AccessorSparseIndices_componentType = AccessorSparseIndices_componentType(js["componentType"])
+            self.componentType: AccessorSparseIndices_componentType = AccessorSparseIndices_componentType(
+                js["componentType"])
+
 
 class AccessorSparseValues:
     """Array of size `count` times number of components, storing the displaced accessor attributes pointed by `indices`. Substituted values must have the same `componentType` and number of components as the base accessor."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -80,8 +88,10 @@ class AccessorSparseValues:
         if (js and "byteOffset" in js):
             self.byteOffset: int = js["byteOffset"]
 
+
 class AccessorSparse:
     """Sparse storage of attributes that deviate from their initialization value."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -102,15 +112,19 @@ class AccessorSparse:
         self.indices: AccessorSparseIndices = None
         """Index array of size `count` that points to those accessor attributes that deviate from their initialization value. Indices must strictly increase."""
         if (js and "indices" in js):
-            self.indices: AccessorSparseIndices = AccessorSparseIndices(js["indices"])
+            self.indices: AccessorSparseIndices = AccessorSparseIndices(
+                js["indices"])
 
         self.values: AccessorSparseValues = None
         """Array of size `count` times number of components, storing the displaced accessor attributes pointed by `indices`. Substituted values must have the same `componentType` and number of components as the base accessor."""
         if (js and "values" in js):
-            self.values: AccessorSparseValues = AccessorSparseValues(js["values"])
+            self.values: AccessorSparseValues = AccessorSparseValues(
+                js["values"])
+
 
 class Accessor:
     """A typed view into a bufferView.  A bufferView contains raw binary data.  An accessor provides a typed view into a bufferView or a subset of a bufferView similar to how WebGL's `vertexAttribPointer()` defines an attribute in a buffer."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -141,7 +155,8 @@ class Accessor:
         self.componentType: Accessor_componentType = None
         """The datatype of components in the attribute."""
         if (js and "componentType" in js):
-            self.componentType: Accessor_componentType = Accessor_componentType(js["componentType"])
+            self.componentType: Accessor_componentType = Accessor_componentType(
+                js["componentType"])
 
         self.normalized: bool = False
         """Specifies whether integer data values should be normalized."""
@@ -171,6 +186,7 @@ class Accessor:
         if (js and "sparse" in js):
             self.sparse: AccessorSparse = AccessorSparse(js["sparse"])
 
+
 class AnimationChannelTarget_path(Enum):
     """The name of the node's TRS property to modify, or the "weights" of the Morph Targets it instantiates. For the "translation" property, the values that are provided by the sampler are the translation along the x, y, and z axes. For the "rotation" property, the values are a quaternion in the order (x, y, z, w), where w is the scalar. For the "scale" property, the values are the scaling factors along the x, y, and z axes."""
     translation = "translation"
@@ -178,8 +194,10 @@ class AnimationChannelTarget_path(Enum):
     scale = "scale"
     weights = "weights"
 
+
 class AnimationChannelTarget:
     """The index of the node and TRS property to target."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -200,10 +218,13 @@ class AnimationChannelTarget:
         self.path: AnimationChannelTarget_path = None
         """The name of the node's TRS property to modify, or the "weights" of the Morph Targets it instantiates. For the "translation" property, the values that are provided by the sampler are the translation along the x, y, and z axes. For the "rotation" property, the values are a quaternion in the order (x, y, z, w), where w is the scalar. For the "scale" property, the values are the scaling factors along the x, y, and z axes."""
         if (js and "path" in js):
-            self.path: AnimationChannelTarget_path = AnimationChannelTarget_path(js["path"])
+            self.path: AnimationChannelTarget_path = AnimationChannelTarget_path(
+                js["path"])
+
 
 class AnimationChannel:
     """Targets an animation's sampler at a node's property."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -224,7 +245,9 @@ class AnimationChannel:
         self.target: AnimationChannelTarget = None
         """The index of the node and TRS property to target."""
         if (js and "target" in js):
-            self.target: AnimationChannelTarget = AnimationChannelTarget(js["target"])
+            self.target: AnimationChannelTarget = AnimationChannelTarget(
+                js["target"])
+
 
 class AnimationSampler_interpolation(Enum):
     """Interpolation algorithm."""
@@ -232,8 +255,10 @@ class AnimationSampler_interpolation(Enum):
     STEP = "STEP"
     CUBICSPLINE = "CUBICSPLINE"
 
+
 class AnimationSampler:
     """Combines input and output accessors with an interpolation algorithm to define a keyframe graph (but not its target)."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -251,18 +276,22 @@ class AnimationSampler:
         if (js and "input" in js):
             self.input: int = js["input"]
 
-        self.interpolation: AnimationSampler_interpolation = AnimationSampler_interpolation("LINEAR")
+        self.interpolation: AnimationSampler_interpolation = AnimationSampler_interpolation(
+            "LINEAR")
         """Interpolation algorithm."""
         if (js and "interpolation" in js):
-            self.interpolation: AnimationSampler_interpolation = AnimationSampler_interpolation(js["interpolation"])
+            self.interpolation: AnimationSampler_interpolation = AnimationSampler_interpolation(
+                js["interpolation"])
 
         self.output: int = -1
         """The index of an accessor, containing keyframe output values."""
         if (js and "output" in js):
             self.output: int = js["output"]
 
+
 class Animation:
     """A keyframe animation."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -283,15 +312,19 @@ class Animation:
         self.channels: List[AnimationChannel] = []
         """Targets an animation's sampler at a node's property."""
         if (js and "channels" in js):
-            self.channels: List[AnimationChannel] = [AnimationChannel(x) for x in js["channels"]]
+            self.channels: List[AnimationChannel] = [
+                AnimationChannel(x) for x in js["channels"]]
 
         self.samplers: List[AnimationSampler] = []
         """Combines input and output accessors with an interpolation algorithm to define a keyframe graph (but not its target)."""
         if (js and "samplers" in js):
-            self.samplers: List[AnimationSampler] = [AnimationSampler(x) for x in js["samplers"]]
+            self.samplers: List[AnimationSampler] = [
+                AnimationSampler(x) for x in js["samplers"]]
+
 
 class Asset:
     """Metadata about the glTF asset."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -324,8 +357,10 @@ class Asset:
         if (js and "minVersion" in js):
             self.minVersion: str = js["minVersion"]
 
+
 class Buffer:
     """A buffer points to binary geometry, animation, or skins."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -353,13 +388,16 @@ class Buffer:
         if (js and "byteLength" in js):
             self.byteLength: int = js["byteLength"]
 
+
 class BufferView_target(Enum):
     """The target that the GPU buffer should be bound to."""
     ARRAY_BUFFER = 34962
     ELEMENT_ARRAY_BUFFER = 34963
 
+
 class BufferView:
     """A view into a buffer generally representing a subset of the buffer."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -402,8 +440,10 @@ class BufferView:
         if (js and "target" in js):
             self.target: BufferView_target = BufferView_target(js["target"])
 
+
 class CameraOrthographic:
     """An orthographic camera containing properties to create an orthographic projection matrix."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -436,8 +476,10 @@ class CameraOrthographic:
         if (js and "znear" in js):
             self.znear: float = js["znear"]
 
+
 class CameraPerspective:
     """A perspective camera containing properties to create a perspective projection matrix."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -470,13 +512,16 @@ class CameraPerspective:
         if (js and "znear" in js):
             self.znear: float = js["znear"]
 
+
 class Camera_type(Enum):
     """Specifies if the camera uses a perspective or orthographic projection."""
     perspective = "perspective"
     orthographic = "orthographic"
 
+
 class Camera:
     """A camera's projection.  A node can reference a camera to apply a transform to place the camera in the scene."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -497,25 +542,30 @@ class Camera:
         self.orthographic: CameraOrthographic = None
         """An orthographic camera containing properties to create an orthographic projection matrix."""
         if (js and "orthographic" in js):
-            self.orthographic: CameraOrthographic = CameraOrthographic(js["orthographic"])
+            self.orthographic: CameraOrthographic = CameraOrthographic(
+                js["orthographic"])
 
         self.perspective: CameraPerspective = None
         """A perspective camera containing properties to create a perspective projection matrix."""
         if (js and "perspective" in js):
-            self.perspective: CameraPerspective = CameraPerspective(js["perspective"])
+            self.perspective: CameraPerspective = CameraPerspective(
+                js["perspective"])
 
         self.type: Camera_type = None
         """Specifies if the camera uses a perspective or orthographic projection."""
         if (js and "type" in js):
             self.type: Camera_type = Camera_type(js["type"])
 
+
 class Image_mimeType(Enum):
     """The image's MIME type. Required if `bufferView` is defined."""
     image_jpeg = "image/jpeg"
     image_png = "image/png"
 
+
 class Image:
     """Image data used to create a texture. Image can be referenced by URI or `bufferView` index. `mimeType` is required in the latter case."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -548,8 +598,10 @@ class Image:
         if (js and "bufferView" in js):
             self.bufferView: int = js["bufferView"]
 
+
 class TextureInfo:
     """The base color texture."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -572,8 +624,10 @@ class TextureInfo:
         if (js and "texCoord" in js):
             self.texCoord: int = js["texCoord"]
 
+
 class MaterialPBRMetallicRoughness:
     """A set of parameter values that are used to define the metallic-roughness material model from Physically-Based Rendering (PBR) methodology. When not specified, all the default values of `pbrMetallicRoughness` apply."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -593,7 +647,8 @@ class MaterialPBRMetallicRoughness:
         self.baseColorTexture: TextureInfo = None
         """The base color texture."""
         if (js and "baseColorTexture" in js):
-            self.baseColorTexture: TextureInfo = TextureInfo(js["baseColorTexture"])
+            self.baseColorTexture: TextureInfo = TextureInfo(
+                js["baseColorTexture"])
 
         self.metallicFactor: float = 1.0
         """The metalness of the material."""
@@ -608,10 +663,13 @@ class MaterialPBRMetallicRoughness:
         self.metallicRoughnessTexture: TextureInfo = None
         """The metallic-roughness texture."""
         if (js and "metallicRoughnessTexture" in js):
-            self.metallicRoughnessTexture: TextureInfo = TextureInfo(js["metallicRoughnessTexture"])
+            self.metallicRoughnessTexture: TextureInfo = TextureInfo(
+                js["metallicRoughnessTexture"])
+
 
 class MaterialNormalTextureInfo:
     """The normal map texture."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -639,8 +697,10 @@ class MaterialNormalTextureInfo:
         if (js and "scale" in js):
             self.scale: float = js["scale"]
 
+
 class MaterialOcclusionTextureInfo:
     """The occlusion map texture."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -668,14 +728,17 @@ class MaterialOcclusionTextureInfo:
         if (js and "strength" in js):
             self.strength: float = js["strength"]
 
+
 class Material_alphaMode(Enum):
     """The alpha rendering mode of the material."""
     OPAQUE = "OPAQUE"
     MASK = "MASK"
     BLEND = "BLEND"
 
+
 class Material:
     """The material appearance of a primitive."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -696,22 +759,26 @@ class Material:
         self.pbrMetallicRoughness: MaterialPBRMetallicRoughness = None
         """A set of parameter values that are used to define the metallic-roughness material model from Physically-Based Rendering (PBR) methodology. When not specified, all the default values of `pbrMetallicRoughness` apply."""
         if (js and "pbrMetallicRoughness" in js):
-            self.pbrMetallicRoughness: MaterialPBRMetallicRoughness = MaterialPBRMetallicRoughness(js["pbrMetallicRoughness"])
+            self.pbrMetallicRoughness: MaterialPBRMetallicRoughness = MaterialPBRMetallicRoughness(
+                js["pbrMetallicRoughness"])
 
         self.normalTexture: MaterialNormalTextureInfo = None
         """The normal map texture."""
         if (js and "normalTexture" in js):
-            self.normalTexture: MaterialNormalTextureInfo = MaterialNormalTextureInfo(js["normalTexture"])
+            self.normalTexture: MaterialNormalTextureInfo = MaterialNormalTextureInfo(
+                js["normalTexture"])
 
         self.occlusionTexture: MaterialOcclusionTextureInfo = None
         """The occlusion map texture."""
         if (js and "occlusionTexture" in js):
-            self.occlusionTexture: MaterialOcclusionTextureInfo = MaterialOcclusionTextureInfo(js["occlusionTexture"])
+            self.occlusionTexture: MaterialOcclusionTextureInfo = MaterialOcclusionTextureInfo(
+                js["occlusionTexture"])
 
         self.emissiveTexture: TextureInfo = None
         """The emissive map texture."""
         if (js and "emissiveTexture" in js):
-            self.emissiveTexture: TextureInfo = TextureInfo(js["emissiveTexture"])
+            self.emissiveTexture: TextureInfo = TextureInfo(
+                js["emissiveTexture"])
 
         self.emissiveFactor: List[float] = []
         if (js and "emissiveFactor" in js):
@@ -720,7 +787,8 @@ class Material:
         self.alphaMode: Material_alphaMode = Material_alphaMode("OPAQUE")
         """The alpha rendering mode of the material."""
         if (js and "alphaMode" in js):
-            self.alphaMode: Material_alphaMode = Material_alphaMode(js["alphaMode"])
+            self.alphaMode: Material_alphaMode = Material_alphaMode(
+                js["alphaMode"])
 
         self.alphaCutoff: float = 0.5
         """The alpha cutoff value of the material."""
@@ -732,6 +800,7 @@ class Material:
         if (js and "doubleSided" in js):
             self.doubleSided: bool = js["doubleSided"]
 
+
 class MeshPrimitive_mode(Enum):
     """The type of primitives to render."""
     POINTS = 0
@@ -742,8 +811,10 @@ class MeshPrimitive_mode(Enum):
     TRIANGLE_STRIP = 5
     TRIANGLE_FAN = 6
 
+
 class MeshPrimitive:
     """Geometry to be rendered with the given material."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -781,8 +852,10 @@ class MeshPrimitive:
         if (js and "targets" in js):
             self.targets: List[Dict[str, int]] = js["targets"]
 
+
 class Mesh:
     """A set of primitives to be rendered.  A node can contain one mesh.  A node's transform places the mesh in the scene."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -803,14 +876,17 @@ class Mesh:
         self.primitives: List[MeshPrimitive] = []
         """Geometry to be rendered with the given material."""
         if (js and "primitives" in js):
-            self.primitives: List[MeshPrimitive] = [MeshPrimitive(x) for x in js["primitives"]]
+            self.primitives: List[MeshPrimitive] = [
+                MeshPrimitive(x) for x in js["primitives"]]
 
         self.weights: List[float] = []
         if (js and "weights" in js):
             self.weights: List[float] = js["weights"]
 
+
 class Node:
     """A node in the node hierarchy.  When the node contains `skin`, all `mesh.primitives` must contain `JOINTS_0` and `WEIGHTS_0` attributes.  A node can have either a `matrix` or any combination of `translation`/`rotation`/`scale` (TRS) properties. TRS properties are converted to matrices and postmultiplied in the `T * R * S` order to compose the transformation matrix; first the scale is applied to the vertices, then the rotation, and then the translation. If none are provided, the transform is the identity. When a node is targeted for animation (referenced by an animation.channel.target), only TRS properties may be present; `matrix` will not be present."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -867,10 +943,12 @@ class Node:
         if (js and "weights" in js):
             self.weights: List[float] = js["weights"]
 
+
 class Sampler_magFilter(Enum):
     """Magnification filter."""
     NEAREST = 9728
     LINEAR = 9729
+
 
 class Sampler_minFilter(Enum):
     """Minification filter."""
@@ -881,11 +959,13 @@ class Sampler_minFilter(Enum):
     NEAREST_MIPMAP_LINEAR = 9986
     LINEAR_MIPMAP_LINEAR = 9987
 
+
 class Sampler_wrapS(Enum):
     """s wrapping mode."""
     CLAMP_TO_EDGE = 33071
     MIRRORED_REPEAT = 33648
     REPEAT = 10497
+
 
 class Sampler_wrapT(Enum):
     """t wrapping mode."""
@@ -893,8 +973,10 @@ class Sampler_wrapT(Enum):
     MIRRORED_REPEAT = 33648
     REPEAT = 10497
 
+
 class Sampler:
     """Texture sampler properties for filtering and wrapping modes."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -915,12 +997,14 @@ class Sampler:
         self.magFilter: Sampler_magFilter = None
         """Magnification filter."""
         if (js and "magFilter" in js):
-            self.magFilter: Sampler_magFilter = Sampler_magFilter(js["magFilter"])
+            self.magFilter: Sampler_magFilter = Sampler_magFilter(
+                js["magFilter"])
 
         self.minFilter: Sampler_minFilter = None
         """Minification filter."""
         if (js and "minFilter" in js):
-            self.minFilter: Sampler_minFilter = Sampler_minFilter(js["minFilter"])
+            self.minFilter: Sampler_minFilter = Sampler_minFilter(
+                js["minFilter"])
 
         self.wrapS: Sampler_wrapS = Sampler_wrapS(10497)
         """s wrapping mode."""
@@ -932,8 +1016,10 @@ class Sampler:
         if (js and "wrapT" in js):
             self.wrapT: Sampler_wrapT = Sampler_wrapT(js["wrapT"])
 
+
 class Scene:
     """The root nodes of a scene."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -955,8 +1041,10 @@ class Scene:
         if (js and "nodes" in js):
             self.nodes: List[int] = js["nodes"]
 
+
 class Skin:
     """Joints and matrices defining a skin."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -988,8 +1076,10 @@ class Skin:
         if (js and "joints" in js):
             self.joints: List[int] = js["joints"]
 
+
 class Texture:
     """A texture and its sampler."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -1017,8 +1107,10 @@ class Texture:
         if (js and "source" in js):
             self.source: int = js["source"]
 
+
 class glTF:
     """The root object for a glTF asset."""
+
     def __init__(self, js: dict = None)->None:
         self.js: dict = js
         self.extensions: Dict[str, Any] = {}
@@ -1042,12 +1134,14 @@ class glTF:
         self.accessors: List[Accessor] = []
         """A typed view into a bufferView.  A bufferView contains raw binary data.  An accessor provides a typed view into a bufferView or a subset of a bufferView similar to how WebGL's `vertexAttribPointer()` defines an attribute in a buffer."""
         if (js and "accessors" in js):
-            self.accessors: List[Accessor] = [Accessor(x) for x in js["accessors"]]
+            self.accessors: List[Accessor] = [
+                Accessor(x) for x in js["accessors"]]
 
         self.animations: List[Animation] = []
         """A keyframe animation."""
         if (js and "animations" in js):
-            self.animations: List[Animation] = [Animation(x) for x in js["animations"]]
+            self.animations: List[Animation] = [
+                Animation(x) for x in js["animations"]]
 
         self.asset: Asset = None
         """Metadata about the glTF asset."""
@@ -1062,7 +1156,8 @@ class glTF:
         self.bufferViews: List[BufferView] = []
         """A view into a buffer generally representing a subset of the buffer."""
         if (js and "bufferViews" in js):
-            self.bufferViews: List[BufferView] = [BufferView(x) for x in js["bufferViews"]]
+            self.bufferViews: List[BufferView] = [
+                BufferView(x) for x in js["bufferViews"]]
 
         self.cameras: List[Camera] = []
         """A camera's projection.  A node can reference a camera to apply a transform to place the camera in the scene."""
@@ -1077,7 +1172,8 @@ class glTF:
         self.materials: List[Material] = []
         """The material appearance of a primitive."""
         if (js and "materials" in js):
-            self.materials: List[Material] = [Material(x) for x in js["materials"]]
+            self.materials: List[Material] = [
+                Material(x) for x in js["materials"]]
 
         self.meshes: List[Mesh] = []
         """A set of primitives to be rendered.  A node can contain one mesh.  A node's transform places the mesh in the scene."""
@@ -1113,6 +1209,7 @@ class glTF:
         """A texture and its sampler."""
         if (js and "textures" in js):
             self.textures: List[Texture] = [Texture(x) for x in js["textures"]]
+
 
 def from_json(js: dict)->glTF:
     return glTF(js)

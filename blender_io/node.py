@@ -6,8 +6,11 @@ import bpy
 import mathutils  # pylint: disable=E0401
 from progress_report import ProgressReport
 
-from .. import gltftypes
+from . import gltftypes
 from . import import_manager
+
+from logging import getLogger  # pylint: disable=C0411
+logger = getLogger(__name__)
 
 
 @contextmanager
@@ -37,6 +40,9 @@ class Node:
 
     def __str__(self)->str:
         return f'{self.index}'
+
+    def __repr__(self)->str:
+        return f'<{self.index}: {self.blender_object}>'
 
     def create_object(self, progress: ProgressReport,
                       collection: bpy.types.Collection,
@@ -104,6 +110,9 @@ class Node:
             skin_name, armature)
         collection.objects.link(self.blender_armature)
         self.blender_armature.show_in_front = True
+        if not self.blender_object:
+            raise Exception('no blender_object: %s' % self)
+
         self.blender_armature.parent = self.blender_object.parent
 
         # select

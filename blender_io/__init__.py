@@ -5,14 +5,15 @@ from typing import Set, List
 from progress_report import ProgressReport  # , ProgressReportSubstep
 import bpy
 
-from .. import gltftypes, blender_io
-
+from . import gltftypes
+from . import glb
 from .import_manager import ImportManager
 from .texture_io import load_textures
 from .material_io import load_materials
 from .mesh_io import load_meshes
 from .node_io import load_objects
 from .node import Node
+from . import gltf_buffer
 
 
 from logging import getLogger  # pylint: disable=C0411
@@ -20,12 +21,13 @@ logger = getLogger(__name__)
 
 
 def _setup_skinning(blender_object: bpy.types.Object,
-                    joints, weights, bone_names: List[str],
+                    attributes: gltf_buffer.VertexBuffer, bone_names: List[str],
                     armature_object: bpy.types.Object)->None:
     # create vertex groups
     for bone_name in bone_names:
-        blender_object.vertex_groups.new(
-            name=bone_name)
+        if bone_name:
+            blender_object.vertex_groups.new(
+                name=bone_name)
 
     idx_already_done: Set[int] = set()
 
@@ -33,21 +35,29 @@ def _setup_skinning(blender_object: bpy.types.Object,
     for poly in blender_object.data.polygons:
         # face vertex index
         for loop_idx in range(poly.loop_start, poly.loop_start + poly.loop_total):
-            vert_idx = blender_object.data.loops[loop_idx].vertex_index
+            loop = blender_object.data.loops[loop_idx]
+            vert_idx = loop.vertex_index
+            if vert_idx < 0:
+                raise Exception()
+            if vert_idx >= len(attributes.joints):
+                raise Exception()
 
             if vert_idx in idx_already_done:
                 continue
             idx_already_done.add(vert_idx)
 
             cpt = 0
-            for joint_idx in joints[vert_idx]:
-                weight_val = weights[vert_idx][cpt]
+            for joint_idx in attributes.joints[vert_idx]:
+                if cpt > 3:
+                    break
+                weight_val = attributes.weights[vert_idx][cpt]
                 if weight_val != 0.0:
                     # It can be a problem to assign weights of 0
                     # for bone index 0, if there is always 4 indices in joint_ tuple
                     bone_name = bone_names[joint_idx]
-                    group = blender_object.vertex_groups[bone_name]
-                    group.add([vert_idx], weight_val, 'REPLACE')
+                    if bone_name:
+                        group = blender_object.vertex_groups[bone_name]
+                        group.add([vert_idx], weight_val, 'REPLACE')
                 cpt += 1
 
     # select
@@ -94,32 +104,44 @@ def load(context,
     with ProgressReport(context.window_manager) as progress:
         progress.enter_substeps(5, "Importing GLTF %r..." % path.name)
 
-        with path.open() as f:
-            gltf = gltftypes.from_json(json.load(f))
+        body = b''
+        try:
+            with path.open('rb') as f:
+                ext = path.suffix.lower()
+                if ext == '.gltf':
+                    gltf = gltftypes.from_json(json.load(f))
+                elif ext == '.glb' or ext == '.vrm':
+                    gltf, body = glb.parse_glb(f.read())
+                else:
+                    logger.error("%s is not supported", ext)
+                    return {'CANCELLED'}
+        except Exception as ex:  # pylint: disable=w0703
+            logger.error("%s", ex)
+            return {'CANCELLED'}
 
-        manager = ImportManager(path, gltf, yup_to_zup)
-        manager.textures.extend(blender_io.load_textures(progress, manager))
-        manager.materials.extend(blender_io.load_materials(progress, manager))
-        manager.meshes.extend(blender_io.load_meshes(progress, manager))
-        nodes = blender_io.load_objects(
+        manager = ImportManager(path, gltf, body, yup_to_zup)
+        manager.textures.extend(load_textures(progress, manager))
+        manager.materials.extend(load_materials(progress, manager))
+        manager.meshes.extend(load_meshes(progress, manager))
+        nodes = load_objects(
             context, progress, manager)
 
         # skinning
         for node in nodes:
             if node.gltf_node.mesh != -1 and node.gltf_node.skin != -1:
                 _, attributes = manager.meshes[node.gltf_node.mesh]
+
                 skin = gltf.skins[node.gltf_node.skin]
                 bone_names = [
                     nodes[joint].bone_name for joint in skin.joints]
-                _setup_skinning(node.blender_object, attributes.joints,
-                                attributes.weights, bone_names,
+                _setup_skinning(node.blender_object, attributes,
+                                bone_names,
                                 nodes[skin.skeleton].blender_armature)
 
         # remove empties
         roots = [node for node in enumerate(nodes) if not node[1].parent]
-        if len(roots) != 1 and roots[0][0] != 0:
-            raise Exception()
-        _remove_empty(roots[0][1])
+        for _, root in roots:
+            _remove_empty(root)
 
         # done
         context.scene.update()

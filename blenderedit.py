@@ -5,7 +5,7 @@ import importlib
 import bpy
 import iogltf
 
-from logging import getLogger # pylint: disable=c0411
+from logging import getLogger  # pylint: disable=c0411
 logger = getLogger(__name__)
 
 
@@ -23,7 +23,8 @@ def run():
     logger.debug("#### run %s ####", __name__)
 
     here = pathlib.Path(__file__).absolute().parent
-    if here.suffix == '.blend':
+    is_blender = here.suffix == '.blend'
+    if is_blender:
         here = here.parent
 
     sample_folder = 'glTF-Sample-Models/2.0'
@@ -32,9 +33,11 @@ def run():
     #path = here / sample_folder / 'BoxAnimated/glTF/BoxAnimated.gltf'
     #path = here / sample_folder / 'Buggy/glTF/Buggy.gltf'
     #path = here / sample_folder / 'CesiumMilkTruck/glTF/CesiumMilkTruck.gltf'
-    path = here / sample_folder / 'CesiumMan/glTF/CesiumMan.gltf'
+    #path = here / sample_folder / 'CesiumMan/glTF/CesiumMan.gltf'
+    path = pathlib.Path(os.environ['USERPROFILE']) / \
+        "Desktop/Alicia/VRM/AliciaSolid.vrm"
 
-    if False: # pylint: disable=W0125
+    if False:  # pylint: disable=W0125
         def mesh_str(mesh):
             return ''.join(str(prim.attributes) for prim in mesh.primitives)
 
@@ -47,7 +50,7 @@ def run():
                     with f.open() as r:
                         gltf = gltftypes.from_json(json.load(r))
                         print(f, [mesh_str(mesh) for mesh in gltf.meshes])
-    elif False: # pylint: disable=W0125
+    elif False:  # pylint: disable=W0125
         for root, _dirs, files in os.walk(here / sample_folder):
             root = pathlib.Path(root)
             for f in files:
@@ -60,13 +63,19 @@ def run():
 
     else:
 
-        try:
-            iogltf.unregister()
-        except: # pylint: disable=W0702
-            pass
-        iogltf.register()
+        if is_blender:
 
-        bpy.ops.import_scene.iogltf('EXEC_DEFAULT', filepath=str(path))
+            try:
+                iogltf.unregister()
+            except:  # pylint: disable=W0702
+                pass
+            iogltf.register()
+
+            bpy.ops.import_scene.iogltf('EXEC_DEFAULT', filepath=str(path))
+
+        else:
+            from blender_io import load
+            load(bpy.context, str(path), True)
 
 
 run()
