@@ -43,7 +43,7 @@ bl_info = {
     "category": "Import-Export"}
 
 
-class ImportGLTF(bpy.types.Operator, ImportHelper):
+class ImportGLTF(bpy.types.Operator):
     """Load a GLTF"""
     bl_idname = "import_scene.iogltf"
     bl_label = "Import GLTF"
@@ -51,7 +51,18 @@ class ImportGLTF(bpy.types.Operator, ImportHelper):
 
     filename_ext = ".gltf"
     filter_glob = StringProperty(default="*.gltf", options={'HIDDEN'})
+    filepath = StringProperty(
+        name="File Path",
+        description="Filepath used for importing the file",
+        maxlen=1024,
+        subtype='FILE_PATH',
+    )
+
     yup_to_zup = BoolProperty(default=True)
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
 
     def execute(self, context):
         keywords = self.as_keywords(
